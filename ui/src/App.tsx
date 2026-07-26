@@ -50,7 +50,7 @@ export function App() {
   const [revealAmount, setRevealAmount] = useState('415000');
 
   // Network Telemetry
-  const [contractAddress] = useState('849625dc40c812bf8f1b2e09da66fc73c829363e49a30c6b83e130bd8a33fd54');
+  const [contractAddress] = useState('8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0');
   const [networkName] = useState('Local Devnet (undeployed)');
   const [proofServerStatus] = useState('Healthy (Port 6300)');
   const [indexerStatus] = useState('Synced (Port 8088)');
