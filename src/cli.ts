@@ -1,5 +1,5 @@
 /**
- * CLI for interacting with confidential-procurement-tender-platform contract
+ * CLI for interacting with Confidential Procurement & Tender Platform contract
  */
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
@@ -7,7 +7,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { WebSocket } from 'ws';
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
 
 // Midnight SDK imports
 import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
@@ -18,13 +18,12 @@ import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config
 import { resolveNetwork, getOrCreateSeed, getDeployment } from './network';
 import { createWallet, persistWalletState, unshieldedToken, type WalletContext } from './wallet';
 import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { parseLedgerState, formatTenderStatus } from './contract-client';
 
 // Enable WebSocket for GraphQL subscriptions
 // @ts-expect-error Required for wallet sync
 globalThis.WebSocket = WebSocket;
 
-// Must match the privateStateId used at deploy time so the CLI reconnects to
-// the same private state. The hello-world contract has no witnesses (empty state).
 const PRIVATE_STATE_ID = 'helloWorldPrivateState';
 
 const { network, config: networkConfig } = resolveNetwork();
@@ -33,10 +32,8 @@ const SEED = getOrCreateSeed(network);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const zkConfigPath = path.resolve(__dirname, '..', 'contracts', 'managed', 'hello-world');
 
-// Load compiled contract
 const contractPath = path.join(zkConfigPath, 'contract', 'index.js');
 
-// Check if contract is compiled
 if (!fs.existsSync(contractPath)) {
   console.error('\n❌ Contract not compiled! Run: npm run compile\n');
   process.exit(1);
@@ -44,27 +41,25 @@ if (!fs.existsSync(contractPath)) {
 
 const HelloWorld = await import(pathToFileURL(contractPath).href);
 
+// Define witness context provider matching hello-world circuits
+const witnessContext = {
+  secretBidAmount: () => 500000n,
+  secretProposalHash: () => new Uint8Array(32).fill(0xab),
+  vendorEligibilitySecret: () => new Uint8Array(32).fill(0x77),
+};
+
 const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
-  CompiledContract.withVacantWitnesses,
+  CompiledContract.withWitnesses(witnessContext),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
 
-// ─── Providers ─────────────────────────────────────────────────────────────────
-
 async function createProviders(walletCtx: WalletContext) {
-  // The SDK requires the private-state password to be at least 16 characters.
-  // The default below is a placeholder for local devnet only — set a strong
-  // password via PRIVATE_STATE_PASSWORD when you move to a non-local target.
   const privateStatePassword = process.env.PRIVATE_STATE_PASSWORD?.trim() || 'Local-Devnet-Development-Placeholder-1';
 
   const walletProvider = {
-    // In Midnight.js 4.1.x the WalletProvider interface returns the key objects
-    // (CoinPublicKey / EncPublicKey) directly — no longer hex strings.
     getCoinPublicKey: () => walletCtx.shieldedSecretKeys.coinPublicKey,
     getEncryptionPublicKey: () => walletCtx.shieldedSecretKeys.encryptionPublicKey,
     async balanceTx(tx: any, ttl?: Date) {
-      // balanceUnboundTransaction -> finalizeRecipe is the complete balancing
-      // path in wallet-sdk 1.x; the earlier explicit signRecipe step is gone.
       const recipe = await walletCtx.wallet.balanceUnboundTransaction(
         tx,
         { shieldedSecretKeys: walletCtx.shieldedSecretKeys, dustSecretKey: walletCtx.dustSecretKey },
@@ -92,63 +87,41 @@ async function createProviders(walletCtx: WalletContext) {
   };
 }
 
-// ─── Main CLI ──────────────────────────────────────────────────────────────────
-
 async function main() {
   console.log('\n╔══════════════════════════════════════════════════════════════╗');
-  console.log('║                   confidential-procurement-tender-platform CLI                           ║');
+  console.log('║   Confidential Procurement & Tender Platform CLI             ║');
   console.log('╚══════════════════════════════════════════════════════════════╝\n');
 
   const rl = createInterface({ input: stdin, output: stdout });
 
-  // Check for deployment
   const deployment = getDeployment(network);
   if (!deployment) {
     console.error(`No deploy on file for network ${network}. Run \`npm run setup -- --network ${network}\` first.`);
     process.exit(1);
   }
-  console.log(`  Contract: ${deployment.address}`);
-  console.log(`  Network: ${network}\n`);
+  console.log(`  Contract Address: ${deployment.address}`);
+  console.log(`  Target Network:   ${network}\n`);
 
   try {
     const seed = SEED;
 
     console.log('  Connecting to wallet...');
     const walletCtx = await createWallet({ network, networkConfig, seed });
-    const restoredCount = Object.values(walletCtx.restored).filter(Boolean).length;
-    if (restoredCount > 0) {
-      console.log(`  Restored ${restoredCount}/3 child wallets from .midnight-wallet-state — sync will resume from saved point.`);
-    }
-
+    
     console.log('  Syncing with network...');
-    console.log('  ℹ  This may take several minutes depending on network size.');
-    console.log('     RPC disconnection messages during sync are normal and can be safely ignored.\n');
     const syncStart = Date.now();
     const syncInterval = setInterval(() => {
       const elapsed = Math.round((Date.now() - syncStart) / 1000);
-      process.stdout.write(`\r  ⏳ Still syncing... (${elapsed}s elapsed)   `);
+      process.stdout.write(`\r  ⏳ Syncing wallet... (${elapsed}s elapsed)   `);
     }, 5000);
     const state = await walletCtx.wallet.waitForSyncedState();
     clearInterval(syncInterval);
     process.stdout.write('\r  ✓ Synced with network.                                      \n');
 
-    // Persist sync state so the next run doesn't have to redo this work.
     await persistWalletState(network, walletCtx);
     const balance = state.unshielded.balances[unshieldedToken().raw] ?? 0n;
-    console.log(`  Balance: ${balance.toLocaleString()} tNight\n`);
+    console.log(`  Wallet Balance: ${balance.toLocaleString()} tNight\n`);
 
-    // Surface a faucet hint when a public-network wallet has 0 tNIGHT.
-    // Reads (option 2) work without funds, but writes (option 1) need DUST
-    // generated from registered NIGHT — without this hint the next failure
-    // mode is a confusing "Insufficient Funds" deep inside the tx builder.
-    if (balance === 0n && network !== 'undeployed' && networkConfig.faucet) {
-      const address = walletCtx.unshieldedKeystore.getBech32Address();
-      console.log('  ⚠ Wallet has no tNight. Fund it from the faucet to send transactions:');
-      console.log(`     ${networkConfig.faucet}`);
-      console.log(`     Wallet address: ${address}\n`);
-    }
-
-    // Setup providers and connect to contract
     console.log('  Connecting to contract...');
     const providers = await createProviders(walletCtx);
 
@@ -159,68 +132,143 @@ async function main() {
       initialPrivateState: {},
     });
 
-    console.log('  ✅ Connected!\n');
+    console.log('  ✅ Connected to Midnight Procurement Contract!\n');
 
-    // Interactive CLI loop
     let running = true;
     while (running) {
-      console.log('─── Menu ───────────────────────────────────────────────────────');
-      console.log('  1. Store a message');
-      console.log('  2. Read current message');
-      console.log('  3. Check wallet balance');
-      console.log('  4. Exit\n');
+      console.log('─── Procurement Menu ──────────────────────────────────────────');
+      console.log('  1. View Current Tender State & Ledger');
+      console.log('  2. Create New Tender (Authority)');
+      console.log('  3. Register Vendor (Vendor)');
+      console.log('  4. Submit Confidential Sealed Bid (Vendor)');
+      console.log('  5. Close Bidding Period (Authority)');
+      console.log('  6. Reveal Winner & Award Tender (Authority)');
+      console.log('  7. Check Wallet & DUST Balance');
+      console.log('  8. Exit\n');
 
-      const choice = await rl.question('  Your choice: ');
+      const choice = await rl.question('  Select menu option (1-8): ');
 
       switch (choice.trim()) {
         case '1': {
-          const message = await rl.question('  Enter your message: ');
-          console.log('\n  Submitting transaction (this may take 30-60 seconds)...');
+          console.log('\n  Querying ledger state from blockchain...');
           try {
-            const tx = await deployed.callTx.storeMessage(message);
-            console.log(`\n  ✅ Message stored: "${message}"`);
-            console.log(`  Transaction ID: ${tx.public.txId}`);
-            console.log(`  Block height: ${tx.public.blockHeight}\n`);
+            const contractState = await providers.publicDataProvider.queryContractState(deployment.address);
+            if (contractState) {
+              const rawLedger = HelloWorld.ledger(contractState.data);
+              const state = parseLedgerState(rawLedger);
+              console.log('\n  ══════════════ CURRENT TENDER LEDGER ══════════════');
+              console.log(`  Tender ID:               ${state.tenderId}`);
+              console.log(`  Title:                   ${state.title}`);
+              console.log(`  Status:                  ${formatTenderStatus(state.status)}`);
+              console.log(`  Deadline Timestamp:      ${state.deadline}`);
+              console.log(`  Registered Vendors:      ${state.registeredVendorsCount}`);
+              console.log(`  Total Sealed Bids:       ${state.totalBidsCount}`);
+              console.log(`  Winning Vendor:          ${state.winningVendor || 'Not yet revealed'}`);
+              console.log(`  Winning Bid Amount:      ${state.winningBidAmount > 0n ? `${state.winningBidAmount} tNight` : 'Confidential / Sealed'}`);
+              console.log('  ═════════════════════════════════════════════════════\n');
+            } else {
+              console.log('\n  📋 Contract state is currently empty.\n');
+            }
           } catch (error) {
-            console.error('\n  ❌ Failed:', error instanceof Error ? error.message : error);
+            console.error('\n  ❌ Query failed:', error instanceof Error ? error.message : error);
           }
           break;
         }
 
         case '2': {
-          console.log('\n  Reading message from blockchain...');
+          const title = await rl.question('  Enter Tender Title: ');
+          const deadlineStr = await rl.question('  Enter Submission Deadline (Unix timestamp or offset in seconds e.g. 86400): ');
+          const deadline = BigInt(Date.now() + (parseInt(deadlineStr) || 86400) * 1000);
+          const tenderId = BigInt(Math.floor(Math.random() * 1000000));
+          const authBytes = new Uint8Array(32).fill(0x01);
+
+          console.log('\n  Creating Tender on-chain (generating ZK proof)...');
           try {
-            const contractState = await providers.publicDataProvider.queryContractState(deployment.address);
-            if (contractState) {
-              const ledgerState = HelloWorld.ledger(contractState.data);
-              const message = Buffer.from(ledgerState.message).toString();
-              console.log(`\n  📋 Current message: "${message}"\n`);
-            } else {
-              console.log('\n  📋 No message found (contract state empty)\n');
-            }
+            const tx = await deployed.callTx.createTender(tenderId, authBytes, title, deadline);
+            console.log(`\n  ✅ Tender Created! ID: ${tenderId}`);
+            console.log(`  Transaction ID: ${tx.public.txId}\n`);
           } catch (error) {
-            console.error('\n  ❌ Failed:', error instanceof Error ? error.message : error);
+            console.error('\n  ❌ Failed to create tender:', error instanceof Error ? error.message : error);
           }
           break;
         }
 
         case '3': {
-          console.log('\n  Checking balance...');
-          const currentState = await walletCtx.wallet.waitForSyncedState();
-          const currentBalance = currentState.unshielded.balances[unshieldedToken().raw] ?? 0n;
-          const dustBalance = currentState.dust.balance(new Date());
-          console.log(`\n  tNight: ${currentBalance.toLocaleString()}`);
-          console.log(`  DUST: ${dustBalance.toLocaleString()}\n`);
+          console.log('\n  Registering vendor with zero-knowledge eligibility proof...');
+          const vendorId = new Uint8Array(32).fill(0x02);
+          try {
+            const tx = await deployed.callTx.registerVendor(vendorId);
+            console.log('\n  ✅ Vendor Registered Successfully!');
+            console.log(`  Transaction ID: ${tx.public.txId}\n`);
+          } catch (error) {
+            console.error('\n  ❌ Registration failed:', error instanceof Error ? error.message : error);
+          }
           break;
         }
 
-        case '4':
+        case '4': {
+          console.log('\n  Submitting confidential sealed bid...');
+          console.log('  ℹ  Bid amount and proposal hash are kept private via ZK witnesses.');
+          const vendorId = new Uint8Array(32).fill(0x02);
+          const currentTimestamp = BigInt(Date.now());
+          try {
+            const tx = await deployed.callTx.submitSealedBid(vendorId, currentTimestamp);
+            console.log('\n  ✅ Sealed Bid Submitted Privately!');
+            console.log(`  Transaction ID: ${tx.public.txId}\n`);
+          } catch (error) {
+            console.error('\n  ❌ Submission failed:', error instanceof Error ? error.message : error);
+          }
+          break;
+        }
+
+        case '5': {
+          console.log('\n  Closing tender bidding period...');
+          const currentTimestamp = BigInt(Date.now() + 100000);
+          try {
+            const tx = await deployed.callTx.closeTender(currentTimestamp);
+            console.log('\n  ✅ Tender Bidding Closed!');
+            console.log(`  Transaction ID: ${tx.public.txId}\n`);
+          } catch (error) {
+            console.error('\n  ❌ Failed to close tender:', error instanceof Error ? error.message : error);
+          }
+          break;
+        }
+
+        case '6': {
+          const winnerHex = await rl.question('  Enter Winning Vendor ID (32-byte hex or blank for default): ');
+          const bidAmtStr = await rl.question('  Enter Winning Bid Amount (tNight): ');
+          const winnerBytes = new Uint8Array(32).fill(0x02);
+          const bidAmt = BigInt(bidAmtStr || '450000');
+
+          console.log('\n  Revealing winner and awarding tender on-chain...');
+          try {
+            const tx = await deployed.callTx.revealWinner(winnerBytes, bidAmt);
+            console.log('\n  🏆 Tender Awarded to Winning Vendor!');
+            console.log(`  Winning Bid Amount: ${bidAmt} tNight`);
+            console.log(`  Transaction ID:     ${tx.public.txId}\n`);
+          } catch (error) {
+            console.error('\n  ❌ Reveal winner failed:', error instanceof Error ? error.message : error);
+          }
+          break;
+        }
+
+        case '7': {
+          console.log('\n  Checking wallet telemetry...');
+          const currentState = await walletCtx.wallet.waitForSyncedState();
+          const currentBalance = currentState.unshielded.balances[unshieldedToken().raw] ?? 0n;
+          const dustBalance = currentState.dust.balance(new Date());
+          console.log(`\n  tNight Balance: ${currentBalance.toLocaleString()}`);
+          console.log(`  DUST Balance:   ${dustBalance.toLocaleString()}\n`);
+          break;
+        }
+
+        case '8':
           running = false;
-          console.log('\n  👋 Goodbye!\n');
+          console.log('\n  👋 Thank you for using Midnight Procurement Platform CLI!\n');
           break;
 
         default:
-          console.log('\n  ❌ Invalid choice. Please enter 1-4.\n');
+          console.log('\n  ❌ Invalid choice. Please select 1-8.\n');
       }
     }
 
