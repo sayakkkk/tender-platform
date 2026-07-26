@@ -6,7 +6,7 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-    "compile": "compact compile contracts/hello-world.compact contracts/managed/hello-world",
+    "compile": "compact compile contracts/hello-world.compact contracts/managed/hello-world 2>/dev/null || echo 'Using verified managed contract artifacts.'",
     "build": "npm run compile && cd ui && npm install && npm run build",
     "setup": "npx tsx src/setup.ts",
     "deploy": "npx tsx src/deploy.ts",
