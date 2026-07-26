@@ -71,6 +71,15 @@ Midnight Protocol enables fine-grained control over public vs. private execution
 
 ---
 
+## 📸 Interface Screenshots & Demo
+
+- **Procurement Authority Dashboard**: Create tenders, set deadlines, and manage tender award transitions.
+- **Vendor Sealed-Bid Wizard**: Zero-knowledge eligibility check and confidential bid submission.
+- **Public Verifier View**: Inspect public ledger state and verify zero-knowledge disclosures.
+- **System Telemetry Drawer**: Monitor devnet node (`9944`), proof server (`6300`), and indexer (`8088`).
+
+---
+
 ## 📋 Submission Requirements Checklist
 
 ### Level 1 Requirements
@@ -134,8 +143,16 @@ npm run dev
 
 ## 🌐 Network Status Report (Local Devnet vs. Preprod)
 
-- **Local Devnet (`undeployed`)**: **FULLY DEPLOYED & OPERATIONAL** (Contract Address: `8fc3bc6157805490036f4d9e1e82cb1afe8855de142f37b88784fd82625c920f`).
-- **Preprod / Preview Testnets**: Supported via `npm run setup -- --network preprod`. If public testnet wallet synchronization slows due to indexer backfill, local devnet provides full instant testing and verification.
+- **Local Devnet (`undeployed`)**: **FULLY DEPLOYED & OPERATIONAL** (Contract Address: `849625dc40c812bf8f1b2e09da66fc73c829363e49a30c6b83e130bd8a33fd54`).
+- **Preprod / Preview Testnets**: Supported via `npm run setup -- --network preprod`. If public testnet wallet synchronization slows due to indexer backfill, local devnet provides full instant testing and verification per mentor guidance.
+
+---
+
+## 🔮 Future Improvements
+
+1. **Multi-Item Sealed Tenders**: Support multi-item tenders with per-item sealed bid evaluations.
+2. **Encrypted Off-Chain Proposal Vault**: Integrate IPFS / Arweave encrypted storage for zero-knowledge technical proposal verification.
+3. **Automated Minimum-Bid Selection Circuit**: Execute minimum-bid evaluation inside a zero-knowledge circuit prior to disclosure.
 
 ---
 
