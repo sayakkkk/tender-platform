@@ -6,7 +6,6 @@ yarn-error.log*
 
 # Build output
 dist/
-build/
 
 # Environment variables
 .env
@@ -20,8 +19,6 @@ contracts/managed/
 
 # Deployment info
 deployment.json
-
-# Wallet seed (sensitive)
 
 # OS generated files
 .DS_Store
@@ -42,6 +39,7 @@ pids/
 *.pid
 *.seed
 *.pid.lock
+midnight-level-db/
 
 # Coverage directory
 coverage/
