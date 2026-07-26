@@ -3,7 +3,7 @@
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/procurement-and-tender)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/procurement-and-tender/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/procurement-and-tender/actions)
-[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://github.com/sayakkkk/procurement-and-tender)
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Devnet-14532D?style=for-the-badge&logo=cardano)](https://midnight.network)
 [![Compact Version](https://img.shields.io/badge/Compact%20DSL-v0.31.1-14532D?style=for-the-badge)](https://midnight.network)
 [![Node Version](https://img.shields.io/badge/Node.js-v22.23.1-14532D?style=for-the-badge&logo=node.js)](https://nodejs.org)
@@ -16,7 +16,7 @@ A privacy-preserving decentralized application built on Midnight Protocol for Le
 
 - **Live Demo**: [https://procurement-and-tender-rust.vercel.app/](https://procurement-and-tender-rust.vercel.app/)
 - **GitHub Repository**: [https://github.com/sayakkkk/procurement-and-tender](https://github.com/sayakkkk/procurement-and-tender)
-- **Demo Video**: [Watch Demo Video](https://github.com/sayakkkk/procurement-and-tender)
+- **Demo Video**: [Watch Demo Video](https://youtu.be/QRd-vPrFKds)
 - **CI/CD Workflow**: [View GitHub Actions Runs](https://github.com/sayakkkk/procurement-and-tender/actions)
 
 ---
@@ -71,7 +71,7 @@ The Confidential Procurement & Tender Platform enforces a strict cryptographic d
 | **Contract Address** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
 | **Midnight Explorer** | [Devnet Explorer](https://explorer.midnight.network) |
 | **CI/CD Pipeline** | [GitHub Actions Workflow](https://github.com/sayakkkk/procurement-and-tender/actions) |
-| **Demo Video** | [Watch Video](https://github.com/sayakkkk/procurement-and-tender) |
+| **Demo Video** | [Watch Video](https://youtu.be/QRd-vPrFKds) |
 
 ---
 
