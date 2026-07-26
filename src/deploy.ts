@@ -76,8 +76,14 @@ if (!fs.existsSync(contractPath)) {
 
 const HelloWorld = await import(pathToFileURL(contractPath).href);
 
+const witnessContext = {
+  secretBidAmount: () => 500000n,
+  secretProposalHash: () => new Uint8Array(32).fill(0xab),
+  vendorEligibilitySecret: () => new Uint8Array(32).fill(0x77),
+};
+
 const compiledContract = CompiledContract.make('hello-world', HelloWorld.Contract).pipe(
-  CompiledContract.withVacantWitnesses,
+  CompiledContract.withWitnesses(witnessContext),
   CompiledContract.withCompiledFileAssets(zkConfigPath),
 );
 
