@@ -1,0 +1,36 @@
+name: CI Pipeline - Confidential Procurement dApp
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Project Dependencies
+        run: npm ci
+
+      - name: Verify Compact Smart Contract Compilation
+        run: npm run compile
+
+      - name: Run Vitest Unit Test Suite
+        run: npm test
+
+      - name: Build React UI Frontend
+        run: |
+          cd ui
+          npm ci
+          npm run build
