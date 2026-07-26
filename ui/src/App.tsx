@@ -85,7 +85,7 @@ export function App() {
   const [proofServerStatus] = useState('Healthy (Port 6300)');
   const [indexerStatus] = useState('Synced (Port 8088)');
 
-  // FEATURE 1: Tender History & Archive State
+  // Feature 1: Archive State
   const [archiveSearch, setArchiveSearch] = useState('');
   const [archiveFilterStatus, setArchiveFilterStatus] = useState<'All' | 'Open' | 'Closed' | 'Awarded'>('All');
   const [archiveSortBy, setArchiveSortBy] = useState<'date' | 'bids'>('date');
@@ -159,7 +159,7 @@ export function App() {
       });
   }, [archiveSearch, archiveFilterStatus, archiveSortBy]);
 
-  // FEATURE 2: Vendor Reputation State
+  // Feature 2: Vendor Reputation State
   const vendorReputations: VendorReputation[] = [
     {
       vendorId: '0x9a8f...1a0f',
@@ -287,9 +287,9 @@ export function App() {
             <span>Midnight Devnet Active</span>
           </div>
 
-          <div style={{ background: '#161b22', border: '1px solid #30363d', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Wallet style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
-            <span style={{ fontWeight: 600, color: '#f0f6fc' }}>{tNightBalance.toLocaleString()} tNight</span>
+          <div style={{ background: '#FFFFFF', border: '1px solid #D6E4D6', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 6px rgba(20,83,45,0.04)' }}>
+            <Wallet style={{ width: '16px', height: '16px', color: '#14532D' }} />
+            <span style={{ fontWeight: 600, color: '#14532D' }}>{tNightBalance.toLocaleString()} tNight</span>
           </div>
         </div>
       </header>
@@ -367,7 +367,7 @@ export function App() {
             </span>
           </div>
 
-          <p className="description" style={{ fontSize: '16px', fontWeight: 600, color: '#f0f6fc', marginBottom: '16px' }}>
+          <p className="description" style={{ fontSize: '16px', fontWeight: 700, color: '#14532D', marginBottom: '16px' }}>
             {tenderTitle}
           </p>
 
@@ -379,12 +379,12 @@ export function App() {
 
             <div className="stat-box">
               <div className="stat-label">Sealed Bids Received</div>
-              <div className="stat-value" style={{ color: '#38bdf8' }}>{totalBidsCount}</div>
+              <div className="stat-value" style={{ color: '#166534' }}>{totalBidsCount}</div>
             </div>
 
             <div className="stat-box">
               <div className="stat-label">Submission Deadline</div>
-              <div className="stat-value" style={{ color: '#fbbf24' }}>
+              <div className="stat-value" style={{ color: '#D97706' }}>
                 {deadlineHours > 0 ? `${deadlineHours} Hours Remaining` : 'Deadline Passed'}
               </div>
             </div>
@@ -489,16 +489,16 @@ export function App() {
               )}
 
               {tenderStatus === 'Awarded' && (
-                <div style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '10px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#34d399', fontWeight: 600, marginBottom: '8px' }}>
+                <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '10px', padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803D', fontWeight: 700, marginBottom: '8px' }}>
                     <CheckCircle2 style={{ width: '20px', height: '20px' }} />
                     Tender Awarded On-Chain!
                   </div>
-                  <div style={{ fontSize: '13px', color: '#c9d1d9' }}>
+                  <div style={{ fontSize: '13px', color: '#14532D' }}>
                     Winning Vendor: <span className="code">{winningVendor.substring(0, 16)}...</span>
                   </div>
-                  <div style={{ fontSize: '13px', color: '#c9d1d9', marginTop: '4px' }}>
-                    Winning Bid: <strong style={{ color: '#34d399' }}>{winningBidAmount?.toLocaleString()} tNight</strong>
+                  <div style={{ fontSize: '13px', color: '#14532D', marginTop: '4px' }}>
+                    Winning Bid: <strong style={{ color: '#166534' }}>{winningBidAmount?.toLocaleString()} tNight</strong>
                   </div>
                 </div>
               )}
@@ -519,8 +519,8 @@ export function App() {
 
             {!vendorEligibilityVerified ? (
               <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-                <KeyRound style={{ width: '48px', height: '48px', color: '#38bdf8', marginBottom: '16px' }} />
-                <h3 style={{ color: '#f0f6fc', marginBottom: '8px' }}>Vendor Eligibility Verification Required</h3>
+                <KeyRound style={{ width: '48px', height: '48px', color: '#14532D', marginBottom: '16px' }} />
+                <h3 style={{ color: '#14532D', marginBottom: '8px' }}>Vendor Eligibility Verification Required</h3>
                 <p className="description" style={{ maxWidth: '500px', margin: '0 auto 24px' }}>
                   Prove authorized vendor status using a private zero-knowledge witness proof without exposing internal corporate credentials on-chain.
                 </p>
@@ -530,9 +530,9 @@ export function App() {
                 </button>
               </div>
             ) : bidSubmittedSuccess ? (
-              <div style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
-                <CheckCircle2 style={{ width: '48px', height: '48px', color: '#38bdf8', margin: '0 auto 16px' }} />
-                <h3 style={{ color: '#f0f6fc', marginBottom: '8px' }}>Confidential Sealed Bid Submitted!</h3>
+              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+                <CheckCircle2 style={{ width: '48px', height: '48px', color: '#166534', margin: '0 auto 16px' }} />
+                <h3 style={{ color: '#14532D', marginBottom: '8px' }}>Confidential Sealed Bid Submitted!</h3>
                 <p className="description" style={{ maxWidth: '600px', margin: '0 auto 16px' }}>
                   Your bid amount and proposal specification have been committed as private ZK witnesses. Observers and competitors only see an increment in total bids count.
                 </p>
@@ -543,7 +543,7 @@ export function App() {
               </div>
             ) : (
               <form onSubmit={handleSubmitBid}>
-                <div style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#34d399', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#15803D', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <ShieldCheck style={{ width: '18px', height: '18px' }} />
                   Vendor Eligibility Verified • Ready to Submit Confidential Sealed Bid
                 </div>
@@ -558,7 +558,7 @@ export function App() {
                       onChange={(e) => setVendorBidAmount(e.target.value)}
                       required
                     />
-                    <span style={{ fontSize: '12px', color: '#8b949e' }}>Kept strictly private in local ZK witness state</span>
+                    <span style={{ fontSize: '12px', color: '#4B5563' }}>Kept strictly private in local ZK witness state</span>
                   </div>
 
                   <div className="form-group">
@@ -570,7 +570,7 @@ export function App() {
                       onChange={(e) => setVendorProposalDesc(e.target.value)}
                       required
                     />
-                    <span style={{ fontSize: '12px', color: '#8b949e' }}>Hashed off-chain via secretProposalHash()</span>
+                    <span style={{ fontSize: '12px', color: '#4B5563' }}>Hashed off-chain via secretProposalHash()</span>
                   </div>
                 </div>
 
@@ -618,16 +618,16 @@ export function App() {
 
               <div className="detail-row">
                 <span>Total Sealed Bids Committed</span>
-                <strong style={{ color: '#38bdf8' }}>{totalBidsCount} Bids</strong>
+                <strong style={{ color: '#166534' }}>{totalBidsCount} Bids</strong>
               </div>
 
               <div className="detail-row">
                 <span>Winner Disclosure Status</span>
                 <span>
                   {tenderStatus === 'Awarded' ? (
-                    <strong style={{ color: '#34d399' }}>Disclosed ({winningBidAmount?.toLocaleString()} tNight)</strong>
+                    <strong style={{ color: '#16A34A' }}>Disclosed ({winningBidAmount?.toLocaleString()} tNight)</strong>
                   ) : (
-                    <span style={{ color: '#8b949e' }}>Hidden / Sealed on Ledger</span>
+                    <span style={{ color: '#4B5563' }}>Hidden / Sealed on Ledger</span>
                   )}
                 </span>
               </div>
@@ -657,20 +657,18 @@ export function App() {
                   value={archiveSearch}
                   onChange={(e) => setArchiveSearch(e.target.value)}
                 />
-                <Search style={{ width: '16px', height: '16px', position: 'absolute', left: '12px', top: '12px', color: '#8b949e' }} />
+                <Search style={{ width: '16px', height: '16px', position: 'absolute', left: '12px', top: '13px', color: '#4B5563' }} />
               </div>
 
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <Filter style={{ width: '16px', height: '16px', color: '#8b949e' }} />
+                <Filter style={{ width: '16px', height: '16px', color: '#4B5563' }} />
                 {(['All', 'Open', 'Closed', 'Awarded'] as const).map((st) => (
                   <button
                     key={st}
-                    className={`btn btn-secondary ${archiveFilterStatus === st ? 'active' : ''}`}
+                    className={`btn ${archiveFilterStatus === st ? 'btn-primary' : 'btn-secondary'}`}
                     style={{
-                      padding: '6px 12px',
+                      padding: '6px 14px',
                       fontSize: '12px',
-                      background: archiveFilterStatus === st ? '#2563eb' : '#21262d',
-                      color: archiveFilterStatus === st ? '#fff' : '#c9d1d9',
                     }}
                     onClick={() => setArchiveFilterStatus(st)}
                   >
@@ -692,51 +690,51 @@ export function App() {
 
             {/* Archive Table */}
             {filteredArchiveTenders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: '#8b949e' }}>
+              <div style={{ textAlign: 'center', padding: '32px', color: '#4B5563' }}>
                 No historical tenders found matching query "{archiveSearch}".
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid #21262d', color: '#8b949e', textAlign: 'left' }}>
-                      <th style={{ padding: '12px 8px' }}>Tender ID</th>
-                      <th style={{ padding: '12px 8px' }}>Title</th>
-                      <th style={{ padding: '12px 8px' }}>Status</th>
-                      <th style={{ padding: '12px 8px' }}>Vendors</th>
-                      <th style={{ padding: '12px 8px' }}>Bids</th>
-                      <th style={{ padding: '12px 8px' }}>Winning Vendor</th>
-                      <th style={{ padding: '12px 8px' }}>Winning Amount</th>
-                      <th style={{ padding: '12px 8px' }}>Timeline</th>
+                    <tr style={{ borderBottom: '2px solid #D6E4D6', color: '#14532D', textAlign: 'left', background: '#F8FAF8' }}>
+                      <th style={{ padding: '12px 10px' }}>Tender ID</th>
+                      <th style={{ padding: '12px 10px' }}>Title</th>
+                      <th style={{ padding: '12px 10px' }}>Status</th>
+                      <th style={{ padding: '12px 10px' }}>Vendors</th>
+                      <th style={{ padding: '12px 10px' }}>Bids</th>
+                      <th style={{ padding: '12px 10px' }}>Winning Vendor</th>
+                      <th style={{ padding: '12px 10px' }}>Winning Amount</th>
+                      <th style={{ padding: '12px 10px' }}>Timeline</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredArchiveTenders.map((t) => (
-                      <tr key={t.id} style={{ borderBottom: '1px solid #21262d', color: '#c9d1d9' }}>
-                        <td style={{ padding: '12px 8px' }} className="code">#{t.id}</td>
-                        <td style={{ padding: '12px 8px', fontWeight: 600, color: '#f0f6fc' }}>{t.title}</td>
-                        <td style={{ padding: '12px 8px' }}>
+                    {filteredArchiveTenders.map((t, idx) => (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #D6E4D6', background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAF8', color: '#14532D' }}>
+                        <td style={{ padding: '12px 10px' }} className="code">#{t.id}</td>
+                        <td style={{ padding: '12px 10px', fontWeight: 600, color: '#14532D' }}>{t.title}</td>
+                        <td style={{ padding: '12px 10px' }}>
                           <span className={`badge ${t.status === 'Open' ? 'badge-success' : t.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
                             {t.status}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 8px' }}>{t.vendorsCount}</td>
-                        <td style={{ padding: '12px 8px', color: '#38bdf8', fontWeight: 600 }}>{t.bidsCount} Bids</td>
-                        <td style={{ padding: '12px 8px' }}>
+                        <td style={{ padding: '12px 10px' }}>{t.vendorsCount}</td>
+                        <td style={{ padding: '12px 10px', color: '#166534', fontWeight: 700 }}>{t.bidsCount} Bids</td>
+                        <td style={{ padding: '12px 10px' }}>
                           {t.winningVendor ? (
                             <span className="code">{t.winningVendor.substring(0, 10)}...</span>
                           ) : (
-                            <span style={{ color: '#8b949e' }}>Sealed / Pending</span>
+                            <span style={{ color: '#4B5563' }}>Sealed / Pending</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 8px' }}>
+                        <td style={{ padding: '12px 10px' }}>
                           {t.winningAmount ? (
-                            <strong style={{ color: '#34d399' }}>{t.winningAmount.toLocaleString()} tNight</strong>
+                            <strong style={{ color: '#16A34A' }}>{t.winningAmount.toLocaleString()} tNight</strong>
                           ) : (
-                            <span style={{ color: '#8b949e' }}>Hidden</span>
+                            <span style={{ color: '#4B5563' }}>Hidden</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 8px', fontSize: '12px', color: '#8b949e' }}>
+                        <td style={{ padding: '12px 10px', fontSize: '12px', color: '#4B5563' }}>
                           {t.createdDate} → {t.closedDate}
                         </td>
                       </tr>
@@ -760,8 +758,8 @@ export function App() {
             </div>
 
             {/* Privacy Protection Banner */}
-            <div style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '10px', padding: '14px', marginBottom: '20px', fontSize: '13px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ShieldCheck style={{ width: '20px', height: '20px', flexShrink: 0 }} />
+            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '20px', fontSize: '13px', color: '#14532D', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ShieldCheck style={{ width: '20px', height: '20px', flexShrink: 0, color: '#166534' }} />
               <div>
                 <strong>Zero-Knowledge Privacy Guaranteed:</strong> Reputation scores are calculated exclusively from verified public tender wins and participation counts. Unsuccessful bid values and lost proposals remain completely private and unexposed.
               </div>
@@ -773,8 +771,8 @@ export function App() {
                 <div
                   key={v.vendorId}
                   style={{
-                    background: '#0d1117',
-                    border: '1px solid #21262d',
+                    background: '#FFFFFF',
+                    border: '1px solid #D6E4D6',
                     borderRadius: '12px',
                     padding: '16px',
                     display: 'flex',
@@ -782,40 +780,41 @@ export function App() {
                     alignItems: 'center',
                     flexWrap: 'wrap',
                     gap: '16px',
+                    boxShadow: '0 2px 8px rgba(20,83,45,0.03)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(56,189,248,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', fontWeight: 700, fontSize: '14px' }}>
+                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: '14px' }}>
                       {v.score}
                     </div>
 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h4 style={{ color: '#f0f6fc', fontSize: '15px' }}>{v.vendorName}</h4>
+                        <h4 style={{ color: '#14532D', fontSize: '15px', fontWeight: 700 }}>{v.vendorName}</h4>
                         {v.isVerified && (
                           <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px' }}>
                             <Star style={{ width: '10px', height: '10px' }} /> Verified Vendor
                           </span>
                         )}
                       </div>
-                      <span className="code" style={{ fontSize: '12px', color: '#8b949e' }}>ID: {v.vendorId}</span>
+                      <span className="code" style={{ fontSize: '12px' }}>ID: {v.vendorId}</span>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Wins</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#34d399' }}>{v.successfulBids}</div>
+                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Wins</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>{v.successfulBids}</div>
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Bids</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#f0f6fc' }}>{v.totalParticipations}</div>
+                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Bids</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#14532D' }}>{v.totalParticipations}</div>
                     </div>
 
                     <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Win Rate</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>{v.winRate}%</div>
+                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Win Rate</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#166534' }}>{v.winRate}%</div>
                     </div>
                   </div>
                 </div>
@@ -839,56 +838,56 @@ export function App() {
             <div className="grid-3" style={{ marginBottom: '24px' }}>
               <div className="stat-box">
                 <div className="stat-label">Total Tenders Created</div>
-                <div className="stat-value" style={{ color: '#f0f6fc' }}>18</div>
+                <div className="stat-value" style={{ color: '#14532D' }}>18</div>
               </div>
 
               <div className="stat-box">
                 <div className="stat-label">Active Open Tenders</div>
-                <div className="stat-value" style={{ color: '#34d399' }}>4</div>
+                <div className="stat-value" style={{ color: '#16A34A' }}>4</div>
               </div>
 
               <div className="stat-box">
                 <div className="stat-label">Completed & Awarded</div>
-                <div className="stat-value" style={{ color: '#38bdf8' }}>14</div>
+                <div className="stat-value" style={{ color: '#166534' }}>14</div>
               </div>
             </div>
 
             {/* Analytics Visual Breakdown Cards */}
             <div className="grid-2">
               {/* Card 1: Tender Lifecycle Breakdown */}
-              <div style={{ background: '#0d1117', border: '1px solid #21262d', borderRadius: '12px', padding: '20px' }}>
-                <h3 style={{ fontSize: '15px', color: '#f0f6fc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Layers style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
+              <div style={{ background: '#F8FAF8', border: '1px solid #D6E4D6', borderRadius: '12px', padding: '20px' }}>
+                <h3 style={{ fontSize: '15px', color: '#14532D', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                  <Layers style={{ width: '18px', height: '18px', color: '#14532D' }} />
                   Tender Status Breakdown
                 </h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                      <span style={{ color: '#34d399' }}>Awarded & Verified (78%)</span>
-                      <span style={{ color: '#f0f6fc' }}>14 Tenders</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px', fontWeight: 600 }}>
+                      <span style={{ color: '#16A34A' }}>Awarded & Verified (78%)</span>
+                      <span style={{ color: '#14532D' }}>14 Tenders</span>
                     </div>
-                    <div style={{ width: '100%', height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: '78%', height: '100%', background: '#34d399' }}></div>
+                    <div style={{ width: '100%', height: '8px', background: '#D6E4D6', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '78%', height: '100%', background: '#16A34A' }}></div>
                     </div>
                   </div>
 
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                      <span style={{ color: '#fbbf24' }}>Active Open Bidding (22%)</span>
-                      <span style={{ color: '#f0f6fc' }}>4 Tenders</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px', fontWeight: 600 }}>
+                      <span style={{ color: '#D97706' }}>Active Open Bidding (22%)</span>
+                      <span style={{ color: '#14532D' }}>4 Tenders</span>
                     </div>
-                    <div style={{ width: '100%', height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: '22%', height: '100%', background: '#fbbf24' }}></div>
+                    <div style={{ width: '100%', height: '8px', background: '#D6E4D6', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '22%', height: '100%', background: '#D97706' }}></div>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Card 2: Quarterly Volume */}
-              <div style={{ background: '#0d1117', border: '1px solid #21262d', borderRadius: '12px', padding: '20px' }}>
-                <h3 style={{ fontSize: '15px', color: '#f0f6fc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <TrendingUp style={{ width: '18px', height: '18px', color: '#34d399' }} />
+              <div style={{ background: '#F8FAF8', border: '1px solid #D6E4D6', borderRadius: '12px', padding: '20px' }}>
+                <h3 style={{ fontSize: '15px', color: '#14532D', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+                  <TrendingUp style={{ width: '18px', height: '18px', color: '#16A34A' }} />
                   Monthly Procurement Growth
                 </h3>
 
@@ -900,8 +899,8 @@ export function App() {
                     { month: 'Jul', height: '100%' },
                   ].map((m) => (
                     <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
-                      <div style={{ width: '100%', background: '#2563eb', height: m.height, borderRadius: '4px 4px 0 0', marginTop: 'auto' }}></div>
-                      <span style={{ fontSize: '11px', color: '#8b949e', marginTop: '6px' }}>{m.month}</span>
+                      <div style={{ width: '100%', background: '#14532D', height: m.height, borderRadius: '4px 4px 0 0', marginTop: 'auto' }}></div>
+                      <span style={{ fontSize: '11px', color: '#4B5563', marginTop: '6px', fontWeight: 600 }}>{m.month}</span>
                     </div>
                   ))}
                 </div>
@@ -924,7 +923,7 @@ export function App() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div className="detail-row">
                 <span>Target Midnight Network</span>
-                <strong style={{ color: '#f0f6fc' }}>{networkName}</strong>
+                <strong style={{ color: '#14532D' }}>{networkName}</strong>
               </div>
 
               <div className="detail-row">
@@ -934,21 +933,21 @@ export function App() {
 
               <div className="detail-row">
                 <span>Proof Server (ZK Proving Engine)</span>
-                <span className="code" style={{ color: '#34d399' }}>{proofServerStatus}</span>
+                <span className="code" style={{ color: '#16A34A' }}>{proofServerStatus}</span>
               </div>
 
               <div className="detail-row">
                 <span>Midnight Indexer GraphQL API</span>
-                <span className="code" style={{ color: '#34d399' }}>{indexerStatus}</span>
+                <span className="code" style={{ color: '#16A34A' }}>{indexerStatus}</span>
               </div>
 
               <div className="detail-row">
                 <span>DUST Token Balance</span>
-                <strong style={{ color: '#fbbf24' }}>{dustBalance} DUST</strong>
+                <strong style={{ color: '#D97706' }}>{dustBalance} DUST</strong>
               </div>
 
               {lastTxId && (
-                <div className="detail-row" style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)' }}>
+                <div className="detail-row" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
                   <span>Last Confirmed Transaction</span>
                   <span className="code">{lastTxId}</span>
                 </div>
@@ -960,12 +959,12 @@ export function App() {
         {/* Telemetry Footer */}
         <div className="telemetry-bar">
           <div className="telemetry-item">
-            <Server style={{ width: '16px', height: '16px', color: '#38bdf8' }} />
+            <Server style={{ width: '16px', height: '16px', color: '#14532D' }} />
             <span>Contract: <span className="code">{contractAddress.substring(0, 18)}...</span></span>
           </div>
 
           <div className="telemetry-item">
-            <ShieldCheck style={{ width: '16px', height: '16px', color: '#34d399' }} />
+            <ShieldCheck style={{ width: '16px', height: '16px', color: '#16A34A' }} />
             <span>Zero-Knowledge Proofs: Active</span>
           </div>
         </div>
