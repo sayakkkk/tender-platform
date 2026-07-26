@@ -1,11 +1,14 @@
 # Confidential Procurement & Tender Platform
 
+[![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
 [![Midnight Compact DSL](https://img.shields.io/badge/Compact%20DSL-v0.31.1-14532D?style=for-the-badge&logo=cardano)](https://midnight.network)
 [![Node.js Version](https://img.shields.io/badge/Node.js-v22.23.1-14532D?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![Vitest Unit Tests](https://img.shields.io/badge/Vitest-9%2F9%20Passing-166534?style=for-the-badge&logo=vitest)](https://vitest.dev)
 [![React UI](https://img.shields.io/badge/UI-React%2018%20%2B%20Vite-15803D?style=for-the-badge&logo=react)](https://reactjs.org)
 [![License](https://img.shields.io/badge/License-Apache--2.0-14532D?style=for-the-badge)](LICENSE)
 
+> 🌐 **Live Vercel Application**: **[https://procurement-and-tender-rust.vercel.app/](https://procurement-and-tender-rust.vercel.app/)**
+> 
 > A privacy-preserving decentralized application built on **Midnight Protocol** for the **Level 3 Sealed-Bid Auction** category. Organizations securely publish public procurement tenders while authorized vendors submit confidential sealed bids. Bid amounts and technical proposal specifications remain private throughout the active bidding period using zero-knowledge proofs. After the submission deadline, only the winning bid is selectively disclosed and verified on-chain.
 
 ---
