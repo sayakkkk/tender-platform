@@ -21,6 +21,24 @@ An enterprise-grade, privacy-preserving decentralized procurement platform engin
 
 ---
 
+## Screenshots
+
+## Landing Page
+
+![Landing Page](docs/landing-page.png)
+
+*The Live Tender Marketplace & Authority Dashboard showing active procurement opportunities, live deadline countdown timers, registered vendor counters, total sealed bid counts, and the interactive 'Bid Now' workflow navigation.*
+
+---
+
+## Trade Page
+
+![Trade Page](docs/trade-page.png)
+
+*The Vendor Sealed-Bid Hub demonstrating zero-knowledge eligibility verification and confidential bid submission. Sealed bid amounts and technical proposal hashes are evaluated locally in private ZK witness state without exposing financial data on-chain.*
+
+---
+
 ## Challenge Requirements & Passing Checklist
 
 - [x] **Level 3 Midnight Project**: Complete implementation of official Level 3 Sealed-Bid Auction dApp.
@@ -257,15 +275,3 @@ Expected Vitest output:
    Start at  14:41:20
    Duration  1.59s (transform 1.16s, setup 0ms, collect 1.17s, tests 49ms, environment 2ms, prepare 1.10s)
 ```
-
----
-
-## Screenshots
-
-## Landing Page
-
-![Landing Page](docs/landing-page.png)
-
-## Trade Page
-
-![Trade Page](docs/trade-page.png)
