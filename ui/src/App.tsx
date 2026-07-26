@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   ShieldCheck,
   Building2,
@@ -14,18 +14,48 @@ import {
   Sparkles,
   Server,
   Zap,
+  History,
+  Search,
+  Filter,
+  BarChart3,
+  TrendingUp,
+  UserCheck,
+  Star,
+  Layers,
 } from 'lucide-react';
 
-export function App() {
-  const [activeTab, setActiveTab] = useState<'authority' | 'vendor' | 'verifier' | 'telemetry'>('authority');
-  
-  // Wallet State
-  const [isWalletConnected, setIsWalletConnected] = useState(true);
-  const [walletAddress] = useState('mn_dev1q8a9z3r4s5t6u7v8w9x0y1z2a3b4c5d6e7f8g');
-  const [tNightBalance, setTNightBalance] = useState<number>(10000);
-  const [dustBalance, setDustBalance] = useState<number>(500);
+interface ArchiveTender {
+  id: number;
+  title: string;
+  status: 'Open' | 'Closed' | 'Awarded';
+  vendorsCount: number;
+  bidsCount: number;
+  winningVendor?: string;
+  winningAmount?: number;
+  createdDate: string;
+  closedDate: string;
+}
 
-  // Contract & Tender Ledger State
+interface VendorReputation {
+  vendorId: string;
+  vendorName: string;
+  score: number;
+  successfulBids: number;
+  totalParticipations: number;
+  winRate: number;
+  isVerified: boolean;
+}
+
+export function App() {
+  const [activeTab, setActiveTab] = useState<
+    'authority' | 'vendor' | 'verifier' | 'archive' | 'reputation' | 'analytics' | 'telemetry'
+  >('authority');
+
+  // Wallet State
+  const [tNightBalance] = useState<number>(10000);
+  const [dustBalance] = useState<number>(500);
+
+  // Active Tender Ledger State
   const [tenderId] = useState<number>(4092);
   const [tenderTitle, setTenderTitle] = useState('Confidential National Cloud Infrastructure Procurement 2026');
   const [tenderStatus, setTenderStatus] = useState<'Open' | 'Closed' | 'Awarded'>('Open');
@@ -55,6 +85,130 @@ export function App() {
   const [proofServerStatus] = useState('Healthy (Port 6300)');
   const [indexerStatus] = useState('Synced (Port 8088)');
 
+  // FEATURE 1: Tender History & Archive State
+  const [archiveSearch, setArchiveSearch] = useState('');
+  const [archiveFilterStatus, setArchiveFilterStatus] = useState<'All' | 'Open' | 'Closed' | 'Awarded'>('All');
+  const [archiveSortBy, setArchiveSortBy] = useState<'date' | 'bids'>('date');
+
+  const initialArchiveTenders: ArchiveTender[] = [
+    {
+      id: 4092,
+      title: 'Confidential National Cloud Infrastructure Procurement 2026',
+      status: 'Open',
+      vendorsCount: 5,
+      bidsCount: 3,
+      createdDate: '2026-07-24',
+      closedDate: '2026-07-28',
+    },
+    {
+      id: 4088,
+      title: 'Zero-Knowledge Electronic Health Record Storage Vault',
+      status: 'Awarded',
+      vendorsCount: 8,
+      bidsCount: 6,
+      winningVendor: '0x9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f',
+      winningAmount: 850000,
+      createdDate: '2026-06-10',
+      closedDate: '2026-06-25',
+    },
+    {
+      id: 4082,
+      title: 'Sovereign Interbank Settlement Gateway Upgrade',
+      status: 'Awarded',
+      vendorsCount: 6,
+      bidsCount: 5,
+      winningVendor: '0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c',
+      winningAmount: 1200000,
+      createdDate: '2026-05-15',
+      closedDate: '2026-06-01',
+    },
+    {
+      id: 4075,
+      title: 'Privacy-Preserving Smart Grid Telemetry System',
+      status: 'Closed',
+      vendorsCount: 4,
+      bidsCount: 4,
+      createdDate: '2026-05-01',
+      closedDate: '2026-05-14',
+    },
+    {
+      id: 4061,
+      title: 'Autonomous Transit Security & Cryptographic Access Keys',
+      status: 'Awarded',
+      vendorsCount: 10,
+      bidsCount: 9,
+      winningVendor: '0x7f8e9d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e',
+      winningAmount: 640000,
+      createdDate: '2026-04-10',
+      closedDate: '2026-04-30',
+    },
+  ];
+
+  const filteredArchiveTenders = useMemo(() => {
+    return initialArchiveTenders
+      .filter((t) => {
+        const matchesSearch =
+          t.title.toLowerCase().includes(archiveSearch.toLowerCase()) ||
+          t.id.toString().includes(archiveSearch);
+        const matchesStatus = archiveFilterStatus === 'All' || t.status === archiveFilterStatus;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => {
+        if (archiveSortBy === 'bids') return b.bidsCount - a.bidsCount;
+        return b.id - a.id;
+      });
+  }, [archiveSearch, archiveFilterStatus, archiveSortBy]);
+
+  // FEATURE 2: Vendor Reputation State
+  const vendorReputations: VendorReputation[] = [
+    {
+      vendorId: '0x9a8f...1a0f',
+      vendorName: 'Apex Sovereign Systems Ltd',
+      score: 98,
+      successfulBids: 4,
+      totalParticipations: 5,
+      winRate: 80,
+      isVerified: true,
+    },
+    {
+      vendorId: '0x1b2c...9b0c',
+      vendorName: 'CyberGuard Infrastructure Inc',
+      score: 94,
+      successfulBids: 3,
+      totalParticipations: 4,
+      winRate: 75,
+      isVerified: true,
+    },
+    {
+      vendorId: '0x7f8e...5f6e',
+      vendorName: 'OmniSecure Cryptographics',
+      score: 91,
+      successfulBids: 3,
+      totalParticipations: 6,
+      winRate: 50,
+      isVerified: true,
+    },
+    {
+      vendorId: '0x3d4e...8f9a',
+      vendorName: 'Quantum Cloud Networks Corp',
+      score: 87,
+      successfulBids: 2,
+      totalParticipations: 5,
+      winRate: 40,
+      isVerified: true,
+    },
+    {
+      vendorId: '0x5a6b...1c2d',
+      vendorName: 'Sovereign Protocol Solutions',
+      score: 82,
+      successfulBids: 1,
+      totalParticipations: 4,
+      winRate: 25,
+      isVerified: false,
+    },
+  ];
+
+  // Event Handlers
   const handleCreateTender = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle) return;
@@ -141,7 +295,7 @@ export function App() {
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="nav-tabs">
+      <nav className="nav-tabs" style={{ overflowX: 'auto', flexWrap: 'wrap' }}>
         <button
           className={`tab-btn ${activeTab === 'authority' ? 'active' : ''}`}
           onClick={() => setActiveTab('authority')}
@@ -164,6 +318,30 @@ export function App() {
         >
           <Eye style={{ width: '18px', height: '18px' }} />
           Public Winner Verifier
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'archive' ? 'active' : ''}`}
+          onClick={() => setActiveTab('archive')}
+        >
+          <History style={{ width: '18px', height: '18px' }} />
+          Tender History
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'reputation' ? 'active' : ''}`}
+          onClick={() => setActiveTab('reputation')}
+        >
+          <UserCheck style={{ width: '18px', height: '18px' }} />
+          Vendor Reputation
+        </button>
+
+        <button
+          className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          <BarChart3 style={{ width: '18px', height: '18px' }} />
+          Tender Analytics
         </button>
 
         <button
@@ -452,6 +630,281 @@ export function App() {
                     <span style={{ color: '#8b949e' }}>Hidden / Sealed on Ledger</span>
                   )}
                 </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FEATURE 1: Tender History & Archive */}
+        {activeTab === 'archive' && (
+          <div className="card">
+            <div className="card-header">
+              <h2>
+                <History className="card-icon" />
+                Tender History & Procurement Archive
+              </h2>
+              <span className="badge badge-primary">Historical Registry</span>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+                <input
+                  type="text"
+                  className="form-input"
+                  style={{ width: '100%', paddingLeft: '36px' }}
+                  placeholder="Search by tender title or ID..."
+                  value={archiveSearch}
+                  onChange={(e) => setArchiveSearch(e.target.value)}
+                />
+                <Search style={{ width: '16px', height: '16px', position: 'absolute', left: '12px', top: '12px', color: '#8b949e' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <Filter style={{ width: '16px', height: '16px', color: '#8b949e' }} />
+                {(['All', 'Open', 'Closed', 'Awarded'] as const).map((st) => (
+                  <button
+                    key={st}
+                    className={`btn btn-secondary ${archiveFilterStatus === st ? 'active' : ''}`}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      background: archiveFilterStatus === st ? '#2563eb' : '#21262d',
+                      color: archiveFilterStatus === st ? '#fff' : '#c9d1d9',
+                    }}
+                    onClick={() => setArchiveFilterStatus(st)}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                className="form-input"
+                style={{ padding: '6px 12px', fontSize: '13px' }}
+                value={archiveSortBy}
+                onChange={(e) => setArchiveSortBy(e.target.value as 'date' | 'bids')}
+              >
+                <option value="date">Sort by Recent ID</option>
+                <option value="bids">Sort by Most Bids</option>
+              </select>
+            </div>
+
+            {/* Archive Table */}
+            {filteredArchiveTenders.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px', color: '#8b949e' }}>
+                No historical tenders found matching query "{archiveSearch}".
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #21262d', color: '#8b949e', textAlign: 'left' }}>
+                      <th style={{ padding: '12px 8px' }}>Tender ID</th>
+                      <th style={{ padding: '12px 8px' }}>Title</th>
+                      <th style={{ padding: '12px 8px' }}>Status</th>
+                      <th style={{ padding: '12px 8px' }}>Vendors</th>
+                      <th style={{ padding: '12px 8px' }}>Bids</th>
+                      <th style={{ padding: '12px 8px' }}>Winning Vendor</th>
+                      <th style={{ padding: '12px 8px' }}>Winning Amount</th>
+                      <th style={{ padding: '12px 8px' }}>Timeline</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredArchiveTenders.map((t) => (
+                      <tr key={t.id} style={{ borderBottom: '1px solid #21262d', color: '#c9d1d9' }}>
+                        <td style={{ padding: '12px 8px' }} className="code">#{t.id}</td>
+                        <td style={{ padding: '12px 8px', fontWeight: 600, color: '#f0f6fc' }}>{t.title}</td>
+                        <td style={{ padding: '12px 8px' }}>
+                          <span className={`badge ${t.status === 'Open' ? 'badge-success' : t.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px 8px' }}>{t.vendorsCount}</td>
+                        <td style={{ padding: '12px 8px', color: '#38bdf8', fontWeight: 600 }}>{t.bidsCount} Bids</td>
+                        <td style={{ padding: '12px 8px' }}>
+                          {t.winningVendor ? (
+                            <span className="code">{t.winningVendor.substring(0, 10)}...</span>
+                          ) : (
+                            <span style={{ color: '#8b949e' }}>Sealed / Pending</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 8px' }}>
+                          {t.winningAmount ? (
+                            <strong style={{ color: '#34d399' }}>{t.winningAmount.toLocaleString()} tNight</strong>
+                          ) : (
+                            <span style={{ color: '#8b949e' }}>Hidden</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 8px', fontSize: '12px', color: '#8b949e' }}>
+                          {t.createdDate} → {t.closedDate}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* FEATURE 2: Vendor Reputation Module */}
+        {activeTab === 'reputation' && (
+          <div className="card">
+            <div className="card-header">
+              <h2>
+                <UserCheck className="card-icon" />
+                Verified Vendor Reputation & Score Registry
+              </h2>
+              <span className="badge badge-success">Zero-Knowledge Verification</span>
+            </div>
+
+            {/* Privacy Protection Banner */}
+            <div style={{ background: 'rgba(56,189,248,0.1)', border: '1px solid rgba(56,189,248,0.3)', borderRadius: '10px', padding: '14px', marginBottom: '20px', fontSize: '13px', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ShieldCheck style={{ width: '20px', height: '20px', flexShrink: 0 }} />
+              <div>
+                <strong>Zero-Knowledge Privacy Guaranteed:</strong> Reputation scores are calculated exclusively from verified public tender wins and participation counts. Unsuccessful bid values and lost proposals remain completely private and unexposed.
+              </div>
+            </div>
+
+            {/* Vendor Cards List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {vendorReputations.map((v) => (
+                <div
+                  key={v.vendorId}
+                  style={{
+                    background: '#0d1117',
+                    border: '1px solid #21262d',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '16px',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'rgba(56,189,248,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(56,189,248,0.3)', color: '#38bdf8', fontWeight: 700, fontSize: '14px' }}>
+                      {v.score}
+                    </div>
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <h4 style={{ color: '#f0f6fc', fontSize: '15px' }}>{v.vendorName}</h4>
+                        {v.isVerified && (
+                          <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px' }}>
+                            <Star style={{ width: '10px', height: '10px' }} /> Verified Vendor
+                          </span>
+                        )}
+                      </div>
+                      <span className="code" style={{ fontSize: '12px', color: '#8b949e' }}>ID: {v.vendorId}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Wins</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#34d399' }}>{v.successfulBids}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Bids</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#f0f6fc' }}>{v.totalParticipations}</div>
+                    </div>
+
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '11px', color: '#8b949e', textTransform: 'uppercase' }}>Win Rate</div>
+                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8' }}>{v.winRate}%</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* FEATURE 3: Tender Analytics Dashboard */}
+        {activeTab === 'analytics' && (
+          <div className="card">
+            <div className="card-header">
+              <h2>
+                <BarChart3 className="card-icon" />
+                Procurement Analytics & Metrics Dashboard
+              </h2>
+              <span className="badge badge-info">Real-Time Insights</span>
+            </div>
+
+            {/* Metrics Overview Grid */}
+            <div className="grid-3" style={{ marginBottom: '24px' }}>
+              <div className="stat-box">
+                <div className="stat-label">Total Tenders Created</div>
+                <div className="stat-value" style={{ color: '#f0f6fc' }}>18</div>
+              </div>
+
+              <div className="stat-box">
+                <div className="stat-label">Active Open Tenders</div>
+                <div className="stat-value" style={{ color: '#34d399' }}>4</div>
+              </div>
+
+              <div className="stat-box">
+                <div className="stat-label">Completed & Awarded</div>
+                <div className="stat-value" style={{ color: '#38bdf8' }}>14</div>
+              </div>
+            </div>
+
+            {/* Analytics Visual Breakdown Cards */}
+            <div className="grid-2">
+              {/* Card 1: Tender Lifecycle Breakdown */}
+              <div style={{ background: '#0d1117', border: '1px solid #21262d', borderRadius: '12px', padding: '20px' }}>
+                <h3 style={{ fontSize: '15px', color: '#f0f6fc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Layers style={{ width: '18px', height: '18px', color: '#38bdf8' }} />
+                  Tender Status Breakdown
+                </h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                      <span style={{ color: '#34d399' }}>Awarded & Verified (78%)</span>
+                      <span style={{ color: '#f0f6fc' }}>14 Tenders</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '78%', height: '100%', background: '#34d399' }}></div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
+                      <span style={{ color: '#fbbf24' }}>Active Open Bidding (22%)</span>
+                      <span style={{ color: '#f0f6fc' }}>4 Tenders</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', background: '#21262d', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '22%', height: '100%', background: '#fbbf24' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Quarterly Volume */}
+              <div style={{ background: '#0d1117', border: '1px solid #21262d', borderRadius: '12px', padding: '20px' }}>
+                <h3 style={{ fontSize: '15px', color: '#f0f6fc', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <TrendingUp style={{ width: '18px', height: '18px', color: '#34d399' }} />
+                  Monthly Procurement Growth
+                </h3>
+
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '100px', paddingTop: '16px' }}>
+                  {[
+                    { month: 'Apr', height: '40%' },
+                    { month: 'May', height: '60%' },
+                    { month: 'Jun', height: '85%' },
+                    { month: 'Jul', height: '100%' },
+                  ].map((m) => (
+                    <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
+                      <div style={{ width: '100%', background: '#2563eb', height: m.height, borderRadius: '4px 4px 0 0', marginTop: 'auto' }}></div>
+                      <span style={{ fontSize: '11px', color: '#8b949e', marginTop: '6px' }}>{m.month}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
