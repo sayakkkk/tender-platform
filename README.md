@@ -4,7 +4,7 @@
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/procurement-and-tender)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/procurement-and-tender/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/procurement-and-tender/actions)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
-[![Midnight Network](https://img.shields.io/badge/Midnight-Devnet-14532D?style=for-the-badge&logo=cardano)](https://midnight.network)
+[![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-14532D?style=for-the-badge&logo=cardano)](https://midnight.network)
 [![Compact Version](https://img.shields.io/badge/Compact%20DSL-v0.31.1-14532D?style=for-the-badge)](https://midnight.network)
 [![Node Version](https://img.shields.io/badge/Node.js-v22.23.1-14532D?style=for-the-badge&logo=node.js)](https://nodejs.org)
 
@@ -79,15 +79,17 @@ The **Confidential Procurement & Tender Platform** leverages Midnight Protocol's
 
 ---
 
-## Contract & Deployment Details
+## 🔗 Contract Deployment Details
 
 | Parameter | Value / Resource Link |
 | :--- | :--- |
-| **Target Network** | Midnight Devnet (`undeployed`) / Preprod Testnet |
+| **Target Network** | **Midnight Preprod** (`preprod`) |
+| **Contract Address** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
+| **Explorer Link** | [Midnight Preprod Explorer](https://explorer.preprod.midnight.network) |
+| **Deployment Status** | **Configured for Midnight Preprod** (Wallet Sync & Preprod Deployment Ready) |
+| **Deployment Method** | Automated Compact SDK Orchestration (`npm run setup -- --network preprod`) |
 | **Live Web App** | [procurement-and-tender-rust.vercel.app](https://procurement-and-tender-rust.vercel.app/) |
 | **GitHub Repository** | [sayakkkk/procurement-and-tender](https://github.com/sayakkkk/procurement-and-tender) |
-| **Contract Address** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
-| **Midnight Explorer** | [Devnet Explorer](https://explorer.midnight.network) |
 | **CI/CD Status** | [GitHub Actions Workflow Runs](https://github.com/sayakkkk/procurement-and-tender/actions) |
 | **Demo Video** | [Watch Video on YouTube](https://youtu.be/QRd-vPrFKds) |
 
@@ -235,10 +237,10 @@ npm run compile
 npm test
 ```
 
-### 5. Deploy Contract to Local Devnet
+### 5. Deploy Contract to Midnight Preprod
 
 ```bash
-npm run setup -- --network undeployed
+npm run setup -- --network preprod
 ```
 
 ### 6. Build & Launch Web Frontend

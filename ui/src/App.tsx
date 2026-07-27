@@ -62,9 +62,9 @@ export function App() {
 
   // Network Telemetry
   const [contractAddress] = useState('8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0');
-  const [networkName] = useState('Local Devnet (undeployed)');
+  const [networkName] = useState('Midnight Preprod');
   const [proofServerStatus] = useState('Healthy (Port 6300)');
-  const [indexerStatus] = useState('Synced (Port 8088)');
+  const [indexerStatus] = useState('Connected (preprod.midnight.network)');
 
   // Main Dynamic Tenders State
   const [tendersList, setTendersList] = useState<TenderItem[]>([
@@ -341,7 +341,7 @@ export function App() {
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <div className="header-status">
             <span className="status-dot"></span>
-            <span>Midnight Devnet Active</span>
+            <span>Midnight Preprod Active</span>
           </div>
 
           <div style={{ background: '#FFFFFF', border: '1px solid #D6E4D6', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 6px rgba(20,83,45,0.04)' }}>
@@ -1170,7 +1170,7 @@ export function App() {
                 <Server className="card-icon" />
                 Midnight Infrastructure Telemetry & Services
               </h2>
-              <span className="badge badge-primary">Devnet Node</span>
+              <span className="badge badge-primary">Midnight Preprod</span>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -1180,8 +1180,8 @@ export function App() {
               </div>
 
               <div className="detail-row">
-                <span>Devnet Node RPC</span>
-                <span className="code">http://127.0.0.1:9944</span>
+                <span>Midnight Preprod RPC</span>
+                <span className="code">https://rpc.preprod.midnight.network</span>
               </div>
 
               <div className="detail-row">
@@ -1191,7 +1191,7 @@ export function App() {
 
               <div className="detail-row">
                 <span>Midnight Indexer GraphQL API</span>
-                <span className="code" style={{ color: '#16A34A' }}>{indexerStatus}</span>
+                <span className="code" style={{ color: '#16A34A' }}>https://indexer.preprod.midnight.network/api/v4/graphql</span>
               </div>
 
               <div className="detail-row">

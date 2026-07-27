@@ -186,7 +186,7 @@ export function resolveNetwork(opts: ResolveOptions = {}): ResolveResult {
       network = state.activeNetwork;
       source = 'state';
     } else {
-      network = 'undeployed';
+      network = 'preprod';
       source = 'default';
     }
   }
