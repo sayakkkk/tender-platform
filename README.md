@@ -84,9 +84,9 @@ The **Confidential Procurement & Tender Platform** leverages Midnight Protocol's
 | Parameter | Value / Resource Link |
 | :--- | :--- |
 | **Target Network** | **Midnight Preprod** (`preprod`) |
-| **Contract Address** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
+| **Contract Circuit Identifier** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
 | **Explorer Link** | [Midnight Preprod Explorer](https://explorer.preprod.midnight.network) |
-| **Deployment Status** | **Configured for Midnight Preprod** (Wallet Sync & Preprod Deployment Ready) |
+| **Deployment Status** | **Midnight Preprod Target Active** (Wallet Syncing & Faucet-Ready for On-Chain Preprod Submission) |
 | **Deployment Method** | Automated Compact SDK Orchestration (`npm run setup -- --network preprod`) |
 | **Live Web App** | [procurement-and-tender-rust.vercel.app](https://procurement-and-tender-rust.vercel.app/) |
 | **GitHub Repository** | [sayakkkk/procurement-and-tender](https://github.com/sayakkkk/procurement-and-tender) |
