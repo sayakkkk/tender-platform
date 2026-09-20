@@ -1,4 +1,5 @@
 # Confidential Procurement & Tender Platform
+### Level 3 Sealed-Bid Auction Architecture on Midnight Network
 
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/procurement-and-tender)
@@ -23,257 +24,140 @@ An enterprise-grade, privacy-preserving decentralized procurement platform engin
 
 ## Screenshots
 
-## Landing Page
-
+### 1. Landing Page & Tender Marketplace
 ![Landing Page](docs/landing-page.png)
-
 *The Live Tender Marketplace & Authority Dashboard showing active procurement opportunities, live deadline countdown timers, registered vendor counters, total sealed bid counts, and the interactive 'Bid Now' workflow navigation.*
 
----
+### 2. Vendor Sealed-Bid Portal
+![Vendor Dashboard](docs/vendor-dashboard.png)
+*Vendor Portal enabling eligibility verification token creation, client-side SHA-256 bid commitment calculation with secret nonces, and encrypted local bid vault persistence.*
 
-## Trade Page
-
-![Trade Page](docs/trade-page.png)
-
-*The Vendor Sealed-Bid Hub demonstrating zero-knowledge eligibility verification and confidential bid submission. Sealed bid amounts and technical proposal hashes are evaluated locally in private ZK witness state without exposing financial data on-chain.*
-
----
-
-## Challenge Requirements & Passing Checklist
-
-- [x] **Level 3 Midnight Project**: Complete implementation of official Level 3 Sealed-Bid Auction dApp.
-- [x] **Full-Stack Decentralized Application**: Seamless integration of smart contract, CLI client, and web UI.
-- [x] **Compact Smart Contract**: Multi-circuit contract in Compact DSL (`contracts/hello-world.compact`).
-- [x] **Midnight Privacy Model**: Dual-state ledger architecture isolating private witness state from public consensus.
-- [x] **Lace Wallet Integration**: Modular account connector supporting Lace Wallet API and local devnet accounts.
-- [x] **Frontend Web Interface**: React 18 SPA styled with an enterprise Light Theme color palette.
-- [x] **Unit Test Suite**: 9/9 passing Vitest unit tests verifying contract compilation, privacy invariants, and network setup.
-- [x] **Automated CI/CD Pipeline**: Fully green GitHub Actions workflow executing contract checks, tests, and UI build.
-- [x] **Vercel Production Deployment**: Automated continuous deployment hosted on Vercel infrastructure.
-- [x] **Public GitHub Repository**: Managed open-source repository with version control history.
-- [x] **Comprehensive Documentation**: Production-ready README containing architecture, privacy specifications, and installation steps.
-- [x] **Responsive UI Design**: Clean layout optimized across desktop and tablet screen sizes.
-- [x] **Version Control Integrity**: Meaningful commit history representing modular feature development.
+### 3. Public Zero-Knowledge Outcome Verification
+![Public Winner Verification](docs/public-winner-verification.png)
+*Cryptographic proof verification suite allowing public verifiers to validate that the revealed winning bid corresponds to the on-chain commitment without exposing losing bids.*
 
 ---
 
-## Midnight Privacy Model
+## Midnight Privacy & State Model
 
-The **Confidential Procurement & Tender Platform** leverages Midnight Protocol's zero-knowledge paradigm to enforce strict cryptographic boundaries between public ledger data and private witness data.
+The platform leverages Midnight's dual-state architecture, strictly separating public on-chain consensus state from private client-side zero-knowledge witness state.
 
-### What an Observer CANNOT Learn
+### Ledger / Public Consensus State
+- **Tender Registry**: Multi-tender map indexed by unique 64-bit `tenderId`, storing authority address, deadline timestamp, status (`Open`, `Closed`, `Awarded`), winning vendor address, and winning bid amount.
+- **Vendor Registration**: Scoped commitments indexing eligible vendors for specific tender IDs.
+- **Bid Commitments**: Cryptographic SHA-256 / Pedersen commitments binding `(tenderId, vendorAddress, bidAmount, secretNonce)` to on-chain state without exposing raw amounts.
 
-- **Sealed Bid Amounts**: Commercial bid amounts remain strictly encapsulated inside local zero-knowledge witness state (`secretBidAmount()`). Competitors, node operators, and indexers cannot observe financial values during active bidding.
-- **Technical Proposal Specifications**: Technical proposals and specifications are hashed off-chain using private witnesses (`secretProposalHash()`), preventing intellectual property leakage.
-- **Vendor Corporate Credentials**: Corporate eligibility secrets (`vendorEligibilitySecret()`) are evaluated locally inside the ZK witness context without broadcasting corporate identity attributes.
-- **Off-Chain Witness Executions**: Intermediate circuit evaluations and private keys remain unexposed to public RPC endpoints and indexer nodes.
+### Private Client-Side Witness State
+- **Bid Amount**: Raw numerical offer known only to the bidding vendor before official reveal.
+- **Blinding Nonce**: 256-bit cryptographically secure random secret preventing rainbow table / brute-force attacks against commitments.
+- **Eligibility Secret**: Private credential token proving vendor authorization without leaking corporate identity.
 
-### What an Observer CAN Learn
-
-- **Public Tender ID**: The unique numerical identifier associated with an active procurement tender (e.g. `#4092`).
-- **Procurement Authority Identity**: The public address of the authority creating the procurement tender.
-- **Submission Deadline**: The block timestamp defining the active submission window.
-- **Total Bids Count**: Aggregate count of sealed bids committed to the tender state.
-- **Selective Winner Disclosure**: Winning vendor address and winning bid amount disclosed on-chain ONLY after the authority closes bidding and calls `revealWinner`.
-- **Public Ledger Lifecycle**: Current status (`Open`, `Closed`, `Awarded`) and total count of registered vendors.
-
----
-
-## 🔗 Contract Deployment Details
-
-| Parameter | Value / Resource Link |
-| :--- | :--- |
-| **Target Network** | **Midnight Preprod** (`preprod`) |
-| **Contract Circuit Identifier** | `8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0` |
-| **Explorer Link** | [Midnight Preprod Explorer](https://explorer.preprod.midnight.network) |
-| **Deployment Status** | **Midnight Preprod Target Active** (Wallet Syncing & Faucet-Ready for On-Chain Preprod Submission) |
-| **Deployment Method** | Automated Compact SDK Orchestration (`npm run setup -- --network preprod`) |
-| **Live Web App** | [procurement-and-tender-rust.vercel.app](https://procurement-and-tender-rust.vercel.app/) |
-| **GitHub Repository** | [sayakkkk/procurement-and-tender](https://github.com/sayakkkk/procurement-and-tender) |
-| **CI/CD Status** | [GitHub Actions Workflow Runs](https://github.com/sayakkkk/procurement-and-tender/actions) |
-| **Demo Video** | [Watch Video on YouTube](https://youtu.be/QRd-vPrFKds) |
+### Privacy Guarantees
+1. **Bid Secrecy**: No validator, node operator, indexer, or competitor can determine the bid amount while a tender is open.
+2. **Preimage Binding**: A winner reveal cannot alter the winning bid amount or vendor address after bidding closes without invalidating the cryptographic commitment check.
+3. **Losing Bid Confidentiality**: Only the winning offer is disclosed upon award; losing bids remain mathematically sealed in perpetuity.
+4. **Multi-Tender Isolation**: All tenders operate independently with isolated vendor lists, commitments, and deadlines.
 
 ---
 
-## Architecture
+## Compact Contract Circuits
 
-The platform architecture isolates sensitive corporate data from public blockchain consensus using five decoupled system layers:
+Target contract: `contracts/procurement.compact`  
+Generated artifacts: `contracts/managed/procurement/`
 
-1. **Compact Smart Contract**: Written in Midnight Compact DSL (`contracts/hello-world.compact`), implementing 5 zero-knowledge circuits: `createTender`, `registerVendor`, `submitSealedBid`, `closeTender`, and `revealWinner`.
-2. **React Frontend**: Enterprise web application built with React 18, Vite, and TypeScript, featuring a Live Tender Marketplace, Vendor Bidding Wizard, and System Telemetry.
-3. **Midnight Wallet Adapter**: Flexible account abstraction layer connecting Lace Wallet API and devnet accounts.
-4. **Proof Server**: Local Midnight Proof Server listening on port `6300` for off-chain zero-knowledge proof generation.
-5. **Midnight Infrastructure**: Devnet Node RPC on port `9944` and Indexer GraphQL API on port `8088`.
+| Circuit | Role | Public Inputs / State Changes | Private Witnesses | Security / Invariant Guarantee |
+| :--- | :--- | :--- | :--- | :--- |
+| `createTender` | Authority | `tenderId`, `deadline`, `authority` -> `tenders` | None | Rejects duplicate tender IDs; enforces positive duration. |
+| `registerVendor` | Vendor | `tenderId`, `vendorPubKey` -> `registeredVendors` | `eligibilitySecret` | Verifies non-empty credential; prevents duplicate registrations. |
+| `submitSealedBid` | Vendor | `tenderId`, `commitment` -> `bidCommitments` | `bidAmount`, `nonce` | Enforces deadline and registration; prevents duplicate bids; binds commitment. |
+| `closeTender` | Authority | `tenderId` -> status `Closed` | None | Enforces authority authorization and deadline expiration. |
+| `revealWinner` | Authority / Winner | `tenderId`, `winner`, `bid`, `commitment` -> status `Awarded` | `bidAmount`, `nonce` | Proves mathematical correspondence to on-chain commitment; binds winner identity. |
 
-```
- +-------------------------------------------------------------------------------+
- |                       PROCUREMENT AUTHORITY DASHBOARD                         |
- |                   (Create Tender, Set Deadline, Close & Award)                |
- +---------------------------------------+---------------------------------------+
-                                         |
-                                         v
- +-------------------------------------------------------------------------------+
- |                        MIDNIGHT COMPACT SMART CONTRACT                        |
- |                                                                               |
- |   Public Ledger State:                                                        |
- |     - tenderId: Uint<64>          - status: Open | Closed | Awarded           |
- |     - authority: Bytes<32>        - registeredVendorsCount: Uint<64>          |
- |     - deadline: Uint<64>          - totalBidsCount: Uint<64>                  |
- |     - winningVendor: Bytes<32>    - winningBidAmount: Uint<64>                |
- |                                                                               |
- |   Private Witnesses (Zero-Knowledge Witness State):                           |
- |     - secretBidAmount(): Uint<64>                                             |
- |     - secretProposalHash(): Bytes<32>                                         |
- |     - vendorEligibilitySecret(): Bytes<32>                                    |
- +---------------------------------------+---------------------------------------+
-                                         ^
-                                         |
- +---------------------------------------+---------------------------------------+
- |                          VENDOR SEALED-BID WIZARD                             |
- |           (Private Eligibility Check & Zero-Knowledge Sealed Bids)            |
- +-------------------------------------------------------------------------------+
+---
+
+## Automated Test Suites
+
+The test suite executes genuine Compact smart contract circuits and cryptographic invariants across 4 dedicated test files (21 passing tests):
+
+```bash
+npm test
 ```
 
----
+### Test Coverage Breakdown:
+1. **`tests/contract.test.ts` (3 tests)**:
+   - Validates generated Compact ZK proving keys, verifier keys, and ZKIR bytecode.
+   - Executes full 5-stage procurement lifecycle in-memory via Compact runtime (`createTender` -> `registerVendor` -> `submitSealedBid` -> `closeTender` -> `revealWinner`).
+   - Verifies cross-tender state isolation between concurrent tenders.
 
-## Key Features
+2. **`tests/privacy.test.ts` (4 tests)**:
+   - Verifies bid amounts and nonces remain private witnesses in circuit execution.
+   - Enforces cryptographic commitment binding to prevent winner tampering.
+   - Validates that tampered bid amounts or nonces are rejected.
+   - Proves vendor eligibility credentials are cryptographically validated.
 
-- **Live Tender Marketplace**: Real-time directory listing active procurement opportunities with countdown timers, bid counts, and automatic "Bid Now" navigation.
-- **Vendor Sealed-Bid Hub**: Guided wizard for verifying corporate eligibility via private ZK proofs and committing confidential bids without financial data leakage.
-- **Authority Procurement Management**: Create tenders, configure submission windows, close bidding periods, and execute selective winner disclosures.
-- **Public Winner Verification**: Audit public ledger state and verify winning bid disclosures post-deadline.
-- **Tender History & Archive**: Searchable registry supporting query filtering by status (`Open`, `Closed`, `Awarded`) and sorting by bid volume or date.
-- **Vendor Reputation Registry**: Public performance index tracking verified vendor wins and participation rates while preserving the privacy of non-winning bid amounts.
-- **Procurement Analytics Dashboard**: Visual distribution charts, lifecycle breakdowns, and volume growth metrics.
-- **System Telemetry Drawer**: Live service health monitoring for Devnet Node (`9944`), Proof Server (`6300`), and Indexer (`8088`).
+3. **`tests/invariants.test.ts` (10 tests)**:
+   - Rejection of duplicate tender creation.
+   - Rejection of vendor registration on non-existent tenders.
+   - Rejection of duplicate vendor registration on the same tender.
+   - Rejection of bid submissions from unregistered vendors.
+   - Rejection of duplicate bid submissions from the same vendor.
+   - Rejection of bid submissions after deadline expiration.
+   - Rejection of zero or invalid bid amounts.
+   - Rejection of closing an open tender before deadline expiration.
+   - Rejection of revealing a winner while bidding is still open.
+   - Rejection of declaring a non-participant as the winning vendor.
 
----
-
-## Tech Stack
-
-| Layer | Technology |
-| :--- | :--- |
-| **Smart Contract DSL** | Midnight Compact (`v0.31.1`) |
-| **ZK Proving Engine** | Midnight Proof Server (`Port 6300`) |
-| **Blockchain Infrastructure** | Midnight Devnet Node (`Port 9944`) & Indexer (`Port 8088`) |
-| **Frontend Framework** | React 18 + TypeScript + Vite (`v5.4`) |
-| **Styling & Design** | Enterprise Light Theme Styling + Lucide Icons |
-| **Unit Testing** | Vitest (`v2.1`) |
-| **CI/CD & Hosting** | GitHub Actions & Vercel |
-
----
-
-## Project Structure
-
-```
-confidential-procurement-tender-platform/
-├── .github/
-│   └── workflows/
-│       └── ci.yml                 # GitHub Actions CI pipeline
-├── contracts/
-│   ├── hello-world.compact        # Compact smart contract source
-│   └── managed/                   # Compiled ZK contract artifacts
-├── docs/
-│   ├── landing-page.png           # Live Tender Marketplace screenshot
-│   └── trade-page.png             # Vendor Sealed-Bid Hub screenshot
-├── src/
-│   ├── cli.ts                     # Interactive CLI application
-│   ├── contract-client.ts         # Contract client & ledger state decoders
-│   ├── deploy.ts                  # Local devnet deployment orchestrator
-│   └── setup.ts                   # Infrastructure setup script
-├── tests/
-│   ├── contract.test.ts           # Contract compilation unit tests
-│   ├── network.test.ts            # Network configuration unit tests
-│   └── privacy.test.ts            # ZK privacy invariant unit tests
-├── ui/
-│   ├── public/                    # Static frontend assets
-│   ├── src/
-│   │   ├── App.tsx                # Main React application & components
-│   │   ├── index.css              # Enterprise Light Theme styling
-│   │   └── main.tsx               # Application entrypoint
-│   ├── package.json               # UI dependencies
-│   └── vite.config.ts             # Vite build configuration
-├── .env.example                   # Environment configuration template
-├── docker-compose.yml             # Local Midnight devnet infrastructure
-├── package.json                   # Root dependencies & scripts
-├── README.md                      # Documentation
-└── vercel.json                    # Vercel deployment configuration
-```
+4. **`tests/network.test.ts` (4 tests)**:
+   - Resolves network configuration flags (`preprod`, `undeployed`).
+   - Validates 64-character hex seed format.
+   - Verifies local ZK Proof Server health endpoint (`http://127.0.0.1:6300/health`).
 
 ---
 
-## Local Setup & Installation
+## Local Setup & Quickstart
 
 ### Prerequisites
+- Node.js `v22.23.1+`
+- npm `10.9.8+`
+- Docker & Docker Compose (for local proof server)
+- Midnight Compact Compiler `v0.31.1+` (optional if using managed artifacts)
+- Midnight Lace Wallet Chrome Extension
 
-- Node.js `22.x` & npm `10.x`
-- Docker Desktop running (Devnet Node, Indexer, Proof Server)
-- Midnight Compact Compiler CLI (`compact` v0.5.1 / compiler 0.31.1)
-
-### 1. Clone Repository & Install Dependencies
-
+### 1. Installation
 ```bash
 git clone https://github.com/sayakkkk/procurement-and-tender.git
 cd procurement-and-tender
 npm install
-cd ui && npm install && cd ..
 ```
 
-### 2. Start Local Midnight Infrastructure
-
+### 2. Start ZK Proof Server
 ```bash
-docker compose up -d
+npm run proof-server:start
+# Confirms healthy on http://127.0.0.1:6300/health
 ```
 
-### 3. Compile Compact Contract
-
-```bash
-npm run compile
-```
-
-### 4. Run Unit Test Suite
-
+### 3. Run Test Suite
 ```bash
 npm test
 ```
 
-### 5. Deploy Contract to Midnight Preprod
-
+### 4. Build & Launch Web UI
 ```bash
-npm run setup -- --network preprod
+npm run dev:ui
+# Opens http://localhost:5173
 ```
-
-### 6. Build & Launch Web Frontend
-
-```bash
-cd ui
-npm run build
-npm run dev
-```
-
-Open `http://localhost:3002` (or `http://localhost:3000`) in your browser.
 
 ---
 
-## Testing
+## Midnight Preprod Configuration
 
-Execute the unit test suite locally to verify circuit declarations, privacy invariants, and network configuration:
+- **Target Network**: Midnight Preprod Testnet
+- **Network ID**: `preprod` (ID: 1)
+- **Indexer GraphQL Endpoint**: `https://indexer.preprod.midnight.network/api/v4/graphql`
+- **Proof Server Endpoint**: `http://127.0.0.1:6300` (Local)
+- **Deployed Procurement Contract Address**: `02008ff27a073d6c82d166cee06f1571d8f9b4e7b4a4e9f310367a7c719b52da30b9`
 
-```bash
-npm test
-```
+---
 
-Expected Vitest output:
-
-```
- RUN  v2.1.9 /home/user/midnight-projects/confidential-procurement-tender-platform
-
- ✓ tests/contract.test.ts (3 tests)
- ✓ tests/network.test.ts (3 tests)
- ✓ tests/privacy.test.ts (3 tests)
-
- Test Files  3 passed (3)
-      Tests  9 passed (9)
-   Start at  14:41:20
-   Duration  1.59s (transform 1.16s, setup 0ms, collect 1.17s, tests 49ms, environment 2ms, prepare 1.10s)
-```
+## License
+MIT License. Engineered for the Midnight Network Community.

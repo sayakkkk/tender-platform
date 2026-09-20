@@ -49,7 +49,7 @@ The platform delivers a zero-knowledge sealed-bid auction model where:
 
 1. **Enforce Absolute Bid Confidentiality**: Guarantee that no party—including procurement authorities, competitors, or Midnight network validators—can inspect sealed bid values during the active tender lifecycle.
 2. **Provide Verifiable Governance & Compliance**: Create an immutable on-chain record of tender state transitions (`Open`, `Closed`, `Awarded`) verified by Midnight network consensus.
-3. **Deliver Full-Stack Level 3 dApp Integration**: Seamlessly connect a multi-circuit Compact smart contract (`contracts/hello-world.compact`), a React 18 enterprise web interface, Midnight Lace Wallet integration, and local/remote ZK Proof Server infrastructure.
+3. **Deliver Full-Stack Level 3 dApp Integration**: Seamlessly connect a multi-circuit Compact smart contract (`contracts/procurement.compact`), a React 18 enterprise web interface, Midnight Lace Wallet integration, and local/remote ZK Proof Server infrastructure.
 4. **Ensure Network Agnosticism**: Support deployment across Midnight Local Devnet, Midnight Testnet, and **Midnight Preprod**.
 
 ---
@@ -165,7 +165,7 @@ confidential-procurement-tender-platform/
 │   └── workflows/
 │       └── ci.yml                 # GitHub Actions CI/CD pipeline
 ├── contracts/
-│   ├── hello-world.compact        # Compact smart contract circuits & state
+│   ├── procurement.compact        # Compact smart contract circuits & state
 │   └── managed/                   # Compiled ZK contract artifacts & keys
 ├── docs/
 │   ├── landing-page.png           # Live Tender Marketplace screenshot
