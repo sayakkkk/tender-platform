@@ -49,7 +49,14 @@
       "proof": true,
       "arguments": [
         {
-          "name": "vendorId",
+          "name": "tId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "vId",
           "type": {
             "type-name": "Bytes",
             "length": 32
@@ -68,7 +75,14 @@
       "proof": true,
       "arguments": [
         {
-          "name": "vendorId",
+          "name": "tId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "fId",
           "type": {
             "type-name": "Bytes",
             "length": 32
@@ -94,6 +108,13 @@
       "proof": true,
       "arguments": [
         {
+          "name": "tId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
           "name": "currentTimestamp",
           "type": {
             "type-name": "Uint",
@@ -113,17 +134,31 @@
       "proof": true,
       "arguments": [
         {
-          "name": "winner",
+          "name": "tId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "winnerId",
           "type": {
             "type-name": "Bytes",
             "length": 32
           }
         },
         {
-          "name": "bidAmt",
+          "name": "winningAmt",
           "type": {
             "type-name": "Uint",
             "maxval": 18446744073709551615
+          }
+        },
+        {
+          "name": "winningNonce",
+          "type": {
+            "type-name": "Bytes",
+            "length": 32
           }
         }
       ],
@@ -145,7 +180,7 @@
       }
     },
     {
-      "name": "secretProposalHash",
+      "name": "secretBidNonce",
       "arguments": [
       ],
       "result type": {
@@ -167,98 +202,115 @@
   ],
   "ledger": [
     {
-      "name": "tenderId",
+      "name": "tenders",
       "index": 0,
       "exported": true,
-      "storage": "Cell",
-      "type": {
+      "storage": "Map",
+      "key": {
         "type-name": "Uint",
         "maxval": 18446744073709551615
-      }
-    },
-    {
-      "name": "authority",
-      "index": 1,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Bytes",
-        "length": 32
-      }
-    },
-    {
-      "name": "title",
-      "index": 2,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Opaque",
-        "tsType": "string"
-      }
-    },
-    {
-      "name": "deadline",
-      "index": 3,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Uint",
-        "maxval": 18446744073709551615
-      }
-    },
-    {
-      "name": "status",
-      "index": 4,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Enum",
-        "name": "TenderStatus",
+      },
+      "value": {
+        "type-name": "Struct",
+        "name": "TenderInfo",
         "elements": [
-          "Open",
-          "Closed",
-          "Awarded"
+          {
+            "name": "tenderId",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          },
+          {
+            "name": "authority",
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          },
+          {
+            "name": "title",
+            "type": {
+              "type-name": "Opaque",
+              "tsType": "string"
+            }
+          },
+          {
+            "name": "deadline",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          },
+          {
+            "name": "status",
+            "type": {
+              "type-name": "Enum",
+              "name": "TenderStatus",
+              "elements": [
+                "Open",
+                "Closed",
+                "Awarded"
+              ]
+            }
+          },
+          {
+            "name": "winningVendor",
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          },
+          {
+            "name": "winningBidAmount",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          },
+          {
+            "name": "registeredVendorsCount",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          },
+          {
+            "name": "totalBidsCount",
+            "type": {
+              "type-name": "Uint",
+              "maxval": 18446744073709551615
+            }
+          }
         ]
       }
     },
     {
-      "name": "winningVendor",
-      "index": 5,
+      "name": "registeredVendors",
+      "index": 1,
       "exported": true,
-      "storage": "Cell",
-      "type": {
+      "storage": "Map",
+      "key": {
         "type-name": "Bytes",
         "length": 32
+      },
+      "value": {
+        "type-name": "Uint",
+        "maxval": 255
       }
     },
     {
-      "name": "winningBidAmount",
-      "index": 6,
+      "name": "bidCommitments",
+      "index": 2,
       "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Uint",
-        "maxval": 18446744073709551615
-      }
-    },
-    {
-      "name": "registeredVendorsCount",
-      "index": 7,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Uint",
-        "maxval": 18446744073709551615
-      }
-    },
-    {
-      "name": "totalBidsCount",
-      "index": 8,
-      "exported": true,
-      "storage": "Cell",
-      "type": {
-        "type-name": "Uint",
-        "maxval": 18446744073709551615
+      "storage": "Map",
+      "key": {
+        "type-name": "Bytes",
+        "length": 32
+      },
+      "value": {
+        "type-name": "Bytes",
+        "length": 32
       }
     }
   ]

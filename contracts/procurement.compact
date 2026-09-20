@@ -1,0 +1,176 @@
+pragma language_version >= 0.23;
+
+import CompactStandardLibrary;
+
+export enum TenderStatus { Open, Closed, Awarded }
+
+export struct TenderInfo {
+    tenderId: Uint<64>,
+    authority: Bytes<32>,
+    title: Opaque<"string">,
+    deadline: Uint<64>,
+    status: TenderStatus,
+    winningVendor: Bytes<32>,
+    winningBidAmount: Uint<64>,
+    registeredVendorsCount: Uint<64>,
+    totalBidsCount: Uint<64>
+}
+
+export struct TenderVendorKey {
+    tenderId: Uint<64>,
+    vendorId: Bytes<32>
+}
+
+export struct BidCommitmentData {
+    tenderId: Uint<64>,
+    vendorId: Bytes<32>,
+    bidAmount: Uint<64>,
+    nonce: Bytes<32>
+}
+
+export ledger tenders: Map<Uint<64>, TenderInfo>;
+export ledger registeredVendors: Map<Bytes<32>, Uint<8> >;
+export ledger bidCommitments: Map<Bytes<32>, Bytes<32> >;
+
+witness secretBidAmount(): Uint<64>;
+witness secretBidNonce(): Bytes<32>;
+witness vendorEligibilitySecret(): Bytes<32>;
+
+export circuit createTender(
+    id: Uint<64>,
+    auth: Bytes<32>,
+    tTitle: Opaque<"string">,
+    subDeadline: Uint<64>
+): [] {
+    assert(!tenders.member(disclose(id)), "Tender already exists");
+    const t = TenderInfo {
+        tenderId: id,
+        authority: auth,
+        title: tTitle,
+        deadline: subDeadline,
+        status: TenderStatus.Open,
+        winningVendor: auth,
+        winningBidAmount: 0,
+        registeredVendorsCount: 0,
+        totalBidsCount: 0
+    };
+    tenders.insert(disclose(id), disclose(t));
+}
+
+export circuit registerVendor(tId: Uint<64>, vId: Bytes<32>): [] {
+    assert(tenders.member(disclose(tId)), "Tender does not exist");
+    const t = tenders.lookup(disclose(tId));
+    assert(t.status == TenderStatus.Open, "Tender is not open");
+    
+    const eligSecret = vendorEligibilitySecret();
+    const emptyBytes = pad(32, "");
+    assert(eligSecret != emptyBytes, "Invalid vendor eligibility credential");
+
+    const key = persistentHash<TenderVendorKey>(TenderVendorKey { tenderId: tId, vendorId: vId });
+    assert(!registeredVendors.member(disclose(key)), "Vendor already registered for tender");
+    registeredVendors.insert(disclose(key), disclose(1 as Uint<8>));
+
+    const updatedTender = TenderInfo {
+        tenderId: t.tenderId,
+        authority: t.authority,
+        title: t.title,
+        deadline: t.deadline,
+        status: t.status,
+        winningVendor: t.winningVendor,
+        winningBidAmount: t.winningBidAmount,
+        registeredVendorsCount: ((t.registeredVendorsCount + 1) as Uint<64>),
+        totalBidsCount: t.totalBidsCount
+    };
+    tenders.insert(disclose(tId), disclose(updatedTender));
+}
+
+export circuit submitSealedBid(tId: Uint<64>, fId: Bytes<32>, currentTimestamp: Uint<64>): [] {
+    assert(tenders.member(disclose(tId)), "Tender does not exist");
+    const t = tenders.lookup(disclose(tId));
+    assert(t.status == TenderStatus.Open, "Tender is not open");
+    assert(currentTimestamp <= t.deadline, "Tender submission deadline has passed");
+
+    const key = persistentHash<TenderVendorKey>(TenderVendorKey { tenderId: tId, vendorId: fId });
+    assert(registeredVendors.member(disclose(key)), "Vendor not registered for tender");
+    assert(!bidCommitments.member(disclose(key)), "Bid already submitted for this tender");
+
+
+    const amt = secretBidAmount();
+    const nonce = secretBidNonce();
+    assert(amt > 0, "Bid amount must be positive");
+
+    const commitmentData = BidCommitmentData {
+        tenderId: tId,
+        vendorId: fId,
+        bidAmount: amt,
+        nonce: nonce
+    };
+    const commitmentHash = persistentHash<BidCommitmentData>(commitmentData);
+    bidCommitments.insert(disclose(key), disclose(commitmentHash));
+
+
+    const updatedTender = TenderInfo {
+        tenderId: t.tenderId,
+        authority: t.authority,
+        title: t.title,
+        deadline: t.deadline,
+        status: t.status,
+        winningVendor: t.winningVendor,
+        winningBidAmount: t.winningBidAmount,
+        registeredVendorsCount: t.registeredVendorsCount,
+        totalBidsCount: ((t.totalBidsCount + 1) as Uint<64>)
+    };
+    tenders.insert(disclose(tId), disclose(updatedTender));
+}
+
+export circuit closeTender(tId: Uint<64>, currentTimestamp: Uint<64>): [] {
+    assert(tenders.member(disclose(tId)), "Tender does not exist");
+    const t = tenders.lookup(disclose(tId));
+    assert(t.status == TenderStatus.Open, "Tender is not open");
+    assert(currentTimestamp >= t.deadline, "Tender deadline has not passed yet");
+
+    const updatedTender = TenderInfo {
+        tenderId: t.tenderId,
+        authority: t.authority,
+        title: t.title,
+        deadline: t.deadline,
+        status: TenderStatus.Closed,
+        winningVendor: t.winningVendor,
+        winningBidAmount: t.winningBidAmount,
+        registeredVendorsCount: t.registeredVendorsCount,
+        totalBidsCount: t.totalBidsCount
+    };
+    tenders.insert(disclose(tId), disclose(updatedTender));
+}
+
+export circuit revealWinner(tId: Uint<64>, winnerId: Bytes<32>, winningAmt: Uint<64>, winningNonce: Bytes<32>): [] {
+    assert(tenders.member(disclose(tId)), "Tender does not exist");
+    const t = tenders.lookup(disclose(tId));
+    assert(t.status == TenderStatus.Closed, "Tender must be closed before revealing winner");
+
+    const key = persistentHash<TenderVendorKey>(TenderVendorKey { tenderId: tId, vendorId: winnerId });
+    assert(bidCommitments.member(disclose(key)), "Winner has not submitted a bid for this tender");
+
+    const expectedCommitment = persistentHash<BidCommitmentData>(BidCommitmentData {
+        tenderId: tId,
+        vendorId: winnerId,
+        bidAmount: winningAmt,
+        nonce: winningNonce
+    });
+
+    const actualCommitment = bidCommitments.lookup(disclose(key));
+    assert(actualCommitment == disclose(expectedCommitment), "Disclosed bid does not match sealed commitment");
+
+    const updatedTender = TenderInfo {
+        tenderId: t.tenderId,
+        authority: t.authority,
+        title: t.title,
+        deadline: t.deadline,
+        status: TenderStatus.Awarded,
+        winningVendor: winnerId,
+        winningBidAmount: winningAmt,
+        registeredVendorsCount: t.registeredVendorsCount,
+        totalBidsCount: t.totalBidsCount
+    };
+    tenders.insert(disclose(tId), disclose(updatedTender));
+}
