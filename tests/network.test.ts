@@ -31,7 +31,7 @@ describe('Confidential Procurement - Network & Provider Configuration', () => {
 
   it('checks proof server reachability when proof server is online', async () => {
     try {
-      const response = await fetch('http://127.0.0.1:6300/health');
+      const response = await fetch('http://127.0.0.1:6300/health', { signal: AbortSignal.timeout(500) });
       if (response.ok) {
         const data = await response.json();
         expect(data.status).toBe('ok');

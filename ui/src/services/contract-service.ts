@@ -1,4 +1,4 @@
-import { Tender, PrivateBidRecord } from '../lib/types';
+﻿import { Tender, PrivateBidRecord } from '../lib/types';
 import { APP_CONFIG } from '../lib/config';
 import { computeBidCommitment } from '../lib/crypto';
 
@@ -58,6 +58,80 @@ export class ProcurementContractService {
       ProcurementContractService.instance = new ProcurementContractService();
     }
     return ProcurementContractService.instance;
+  }
+
+  public static getAllTenders(): Tender[] {
+    return ProcurementContractService.getInstance().getTenders();
+  }
+
+  public static getTenders(): Tender[] {
+    return ProcurementContractService.getInstance().getTenders();
+  }
+
+  public static getTenderById(id: number): Tender | undefined {
+    return ProcurementContractService.getInstance().getTenderById(id);
+  }
+
+  public static async createTenderOnChain(
+    title: string,
+    description: string,
+    category: Tender['category'],
+    budgetCap: number,
+    deadlineDays: number,
+    eligibilityTier: number,
+    authorityAddress: string
+  ): Promise<{ tender: Tender; txHash: string }> {
+    return ProcurementContractService.getInstance().createTenderOnChain(
+      title,
+      description,
+      category,
+      budgetCap,
+      deadlineDays,
+      eligibilityTier,
+      authorityAddress
+    );
+  }
+
+  public static async submitSealedBid(
+    tenderId: number,
+    bidAmount: number,
+    nonce: string,
+    vendorAddress: string,
+    eligibilityToken: string
+  ): Promise<{ record: PrivateBidRecord; commitment: string; txHash: string }> {
+    return ProcurementContractService.getInstance().submitSealedBid(
+      tenderId,
+      bidAmount,
+      nonce,
+      vendorAddress,
+      eligibilityToken
+    );
+  }
+
+  public static getVaultRecords(): PrivateBidRecord[] {
+    return ProcurementContractService.getInstance().getVaultRecords();
+  }
+
+  public static saveToVault(record: PrivateBidRecord): void {
+    ProcurementContractService.getInstance().saveToVault(record);
+  }
+
+  public static closeTender(tenderId: number): Tender {
+    return ProcurementContractService.getInstance().closeTender(tenderId);
+  }
+
+  public static async revealWinner(
+    tenderId: number,
+    winnerAddress: string,
+    winningAmount: number,
+    nonce: string
+  ): Promise<{ tender: Tender; verifiedCommitment: string }> {
+    return ProcurementContractService.getInstance().revealWinner(
+      tenderId,
+      winnerAddress,
+      winningAmount,
+      nonce
+    );
   }
 
   public getTenders(): Tender[] {
@@ -202,8 +276,20 @@ export class ProcurementContractService {
   ): Promise<{ tender: Tender; verifiedCommitment: string }> {
     const tender = this.getTenderById(tenderId);
     if (!tender) throw new Error("Tender #" + tenderId + " not found.");
+    if (tender.status === 'OPEN') {
+      throw new Error("Tender must be closed before revealing winner.");
+    }
 
     const calculatedCommitment = await computeBidCommitment(winningAmount, nonce, winnerAddress, tenderId);
+
+    const records = this.getVaultRecords();
+    const tenderBids = records.filter(r => r.tenderId === tenderId);
+    if (tenderBids.length > 0) {
+      const match = tenderBids.find(r => r.commitment === calculatedCommitment && r.vendorAddress.toLowerCase() === winnerAddress.toLowerCase());
+      if (!match) {
+        throw new Error("Revealed commitment does not match any valid sealed bid submitted for this tender.");
+      }
+    }
 
     tender.status = 'REVEALED';
     tender.winnerAddress = winnerAddress;
@@ -213,7 +299,6 @@ export class ProcurementContractService {
 
     this.saveTender(tender);
 
-    const records = this.getVaultRecords();
     records.forEach(r => {
       if (r.tenderId === tenderId) {
         if (r.commitment === calculatedCommitment) {
