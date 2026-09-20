@@ -56,3 +56,11 @@ temp/
 
 # Midnight wallet sync state (per-network serialized wallet state cache)
 .midnight-wallet-state/
+
+# Next.js build artifacts
+.next/
+ui/.next/
+out/
+ui/out/
+next-env.d.ts
+ui/next-env.d.ts

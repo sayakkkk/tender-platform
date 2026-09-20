@@ -1,192 +1,230 @@
-/**
- * Contract & Indexer Service for Confidential Procurement Platform
- * Handles genuine indexer state querying, client-side cryptographic hashing, and local sealed bid storage.
- */
+import { Tender, PrivateBidRecord } from '../lib/types';
+import { APP_CONFIG } from '../lib/config';
+import { computeBidCommitment } from '../lib/crypto';
 
-export enum TenderStatus {
-  Open = 0,
-  Closed = 1,
-  Awarded = 2,
-}
-
-export interface TenderItem {
-  id: number;
-  title: string;
-  description: string;
-  authority: string;
-  status: 'Open' | 'Closed' | 'Awarded';
-  vendorsCount: number;
-  bidsCount: number;
-  deadline: string;
-  deadlineTimestamp: number;
-  winningVendor?: string;
-  winningAmount?: number;
-  createdDate: string;
-  isOnChain: boolean;
-}
-
-export interface PrivateBidRecord {
-  tenderId: number;
-  vendorAddress: string;
-  bidAmount: number;
-  nonceHex: string;
-  commitmentHash: string;
-  timestamp: string;
-  status: 'Sealed' | 'Revealed';
-  isWinner?: boolean;
-}
-
-const CONTRACT_ADDRESS_KEY = 'midnight_procurement_contract_address';
-export const DEFAULT_PREPROD_CONTRACT = '02008ff27a073d6c82d166cee06f1571d8f9b4e7b4a4e9f310367a7c719b52da30b9';
-
-export function getContractAddress(): string {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem(CONTRACT_ADDRESS_KEY) || DEFAULT_PREPROD_CONTRACT;
-  }
-  return DEFAULT_PREPROD_CONTRACT;
-}
-
-export function setContractAddress(addr: string): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(CONTRACT_ADDRESS_KEY, addr);
-  }
-}
-
-/**
- * Computes a cryptographically secure 32-byte SHA-256 hash matching the contract commitment scheme.
- * Schema: TENDER_{tenderId}_VENDOR_{vendorAddress}_AMOUNT_{bidAmount}_NONCE_{nonceHex}
- */
-export async function computeBidCommitment(
-  tenderId: number,
-  vendorAddress: string,
-  bidAmount: number,
-  nonceHex: string
-): Promise<string> {
-  const cleanVendor = vendorAddress.toLowerCase().replace('0x', '');
-  const cleanNonce = nonceHex.toLowerCase().replace('0x', '');
-  const dataString = "TENDER_" + tenderId + "_VENDOR_" + cleanVendor + "_AMOUNT_" + bidAmount + "_NONCE_" + cleanNonce;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(dataString);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return '0x' + hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Generates a cryptographically random 32-byte hex nonce.
- */
-export function generateRandomNonce(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-/**
- * Generates an eligibility credential token.
- */
-export function generateEligibilitySecret(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return 'cred_' + Array.from(array.slice(0, 16)).map((b) => b.toString(16).padStart(2, '0')).join('');
-}
-
-const BIDS_STORAGE_KEY = 'midnight_procurement_private_bids';
-
-export function getSavedPrivateBids(): PrivateBidRecord[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(BIDS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function savePrivateBid(record: PrivateBidRecord): void {
-  if (typeof window === 'undefined') return;
-  const existing = getSavedPrivateBids();
-  const filtered = existing.filter(
-    (b) => !(b.tenderId === record.tenderId && b.vendorAddress.toLowerCase() === record.vendorAddress.toLowerCase())
-  );
-  filtered.push(record);
-  localStorage.setItem(BIDS_STORAGE_KEY, JSON.stringify(filtered));
-}
-
-export function updatePrivateBidStatus(tenderId: number, vendorAddress: string, status: 'Sealed' | 'Revealed', isWinner = false): void {
-  if (typeof window === 'undefined') return;
-  const existing = getSavedPrivateBids();
-  const updated = existing.map((b) => {
-    if (b.tenderId === tenderId && b.vendorAddress.toLowerCase() === vendorAddress.toLowerCase()) {
-      return { ...b, status, isWinner };
-    }
-    return b;
-  });
-  localStorage.setItem(BIDS_STORAGE_KEY, JSON.stringify(updated));
-}
-
-/**
- * Format remaining time until deadline.
- */
-export function formatTimeRemaining(deadlineTimestamp: number): string {
-  const diff = deadlineTimestamp - Date.now();
-  if (diff <= 0) return 'Deadline passed (Closed)';
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const secs = Math.floor((diff % (1000 * 60)) / 1000);
-  if (hours > 24) {
-    const days = Math.floor(hours / 24);
-    const remHours = hours % 24;
-    return days + "d " + remHours + "h remaining";
-  }
-  return hours + "h " + mins + "m " + secs + "s";
-}
-
-export function isDeadlinePassed(deadlineTimestamp: number): boolean {
-  return Date.now() > deadlineTimestamp;
-}
-
-export const INITIAL_TENDERS: TenderItem[] = [
+const INITIAL_TENDERS: Tender[] = [
   {
     id: 101,
-    title: 'Confidential Zero-Knowledge Computing Cluster',
-    description: 'Procurement of confidential cryptographic hardware nodes with secure enclave support and high-bandwidth interconnects for private ledger computation.',
-    authority: '0x3a92b94f9e160e6e7368d1f2a32f91a788c005b1',
-    status: 'Open',
-    vendorsCount: 3,
-    bidsCount: 2,
-    deadline: '2026-10-15 18:00:00 UTC',
-    deadlineTimestamp: Date.now() + 86400000 * 25,
-    createdDate: '2026-09-18',
-    isOnChain: true,
+    title: "High-Performance Computing Infrastructure for Genomic Data Processing",
+    description: "Procurement of 64x GPU-accelerated cluster nodes with strict zero-knowledge security compliance and confidential pricing constraints.",
+    category: "INFRASTRUCTURE",
+    authority: "02008899aabbccddeeff00112233445566778899aabbccddeeff00112233445566",
+    budgetCap: 1500000,
+    deadline: new Date(Date.now() + 86400000 * 5).toISOString(),
+    status: "OPEN",
+    eligibilityScoreReq: 3,
+    bidCommitmentsCount: 3,
+    provenance: "BLOCKCHAIN"
   },
   {
     id: 102,
-    title: 'Confidential Healthcare Record Auditing Infrastructure',
-    description: 'Privacy-preserving compliance monitoring network utilizing Midnight zero-knowledge proofs to verify clinical trial integrity without exposing patient PHI.',
-    authority: '0x3a92b94f9e160e6e7368d1f2a32f91a788c005b1',
-    status: 'Closed',
-    vendorsCount: 4,
-    bidsCount: 4,
-    deadline: '2026-09-19 12:00:00 UTC',
-    deadlineTimestamp: Date.now() - 3600000 * 24,
-    winningVendor: '0x7c21085ba443198031d279cf447c10bcf2e77b19',
-    winningAmount: 485000,
-    createdDate: '2026-09-10',
-    isOnChain: true,
+    title: "Decentralized Zero-Knowledge Key Management & HSM Hardware",
+    description: "Enterprise procurement for FIPS 140-3 Level 4 certified Hardware Security Modules (HSM) with multi-party computation support.",
+    category: "DEFENSE",
+    authority: "02008899aabbccddeeff00112233445566778899aabbccddeeff00112233445566",
+    budgetCap: 850000,
+    deadline: new Date(Date.now() + 86400000 * 2).toISOString(),
+    status: "OPEN",
+    eligibilityScoreReq: 4,
+    bidCommitmentsCount: 2,
+    provenance: "BLOCKCHAIN"
   },
   {
     id: 103,
-    title: 'Cross-Border Supply Chain Verification Oracle Nodes',
-    description: 'Deployment of tamper-resistant oracle infrastructure for private cross-border trade customs validation using zero-knowledge identity certificates.',
-    authority: '0x88f219cc1b39a48e714902cd5349e10398f844a2',
-    status: 'Open',
-    vendorsCount: 2,
-    bidsCount: 1,
-    deadline: '2026-10-30 23:59:59 UTC',
-    deadlineTimestamp: Date.now() + 86400000 * 40,
-    createdDate: '2026-09-19',
-    isOnChain: true,
+    title: "Healthcare Clinical Trial Patient Privacy Protocol & Telemetry Nodes",
+    description: "Federated learning client nodes for encrypted biometric clinical trial evaluation across distributed hospital networks.",
+    category: "HEALTHCARE",
+    authority: "02008899aabbccddeeff00112233445566778899aabbccddeeff00112233445566",
+    budgetCap: 620000,
+    deadline: new Date(Date.now() - 3600000 * 12).toISOString(),
+    status: "REVEALED",
+    eligibilityScoreReq: 2,
+    bidCommitmentsCount: 4,
+    winnerAddress: "0200112233445566778899aabbccddeeff00112233445566778899aabbccddee",
+    winningBidAmount: 485000,
+    winnerCommitment: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    revealTimestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    provenance: "BLOCKCHAIN"
   }
 ];
+
+export class ProcurementContractService {
+  private static instance: ProcurementContractService;
+
+  private constructor() {}
+
+  public static getInstance(): ProcurementContractService {
+    if (!ProcurementContractService.instance) {
+      ProcurementContractService.instance = new ProcurementContractService();
+    }
+    return ProcurementContractService.instance;
+  }
+
+  public getTenders(): Tender[] {
+    if (typeof window === 'undefined') return INITIAL_TENDERS;
+    const stored = localStorage.getItem(APP_CONFIG.DEFAULT_TENDERS_STORAGE_KEY);
+    if (!stored) {
+      localStorage.setItem(APP_CONFIG.DEFAULT_TENDERS_STORAGE_KEY, JSON.stringify(INITIAL_TENDERS));
+      return INITIAL_TENDERS;
+    }
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return INITIAL_TENDERS;
+    }
+  }
+
+  public getTenderById(id: number): Tender | undefined {
+    return this.getTenders().find(t => t.id === id);
+  }
+
+  public saveTender(tender: Tender): void {
+    const tenders = this.getTenders();
+    const index = tenders.findIndex(t => t.id === tender.id);
+    if (index >= 0) {
+      tenders[index] = tender;
+    } else {
+      tenders.unshift(tender);
+    }
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(APP_CONFIG.DEFAULT_TENDERS_STORAGE_KEY, JSON.stringify(tenders));
+    }
+  }
+
+  public async createTenderOnChain(
+    title: string,
+    description: string,
+    category: Tender['category'],
+    budgetCap: number,
+    deadlineDays: number,
+    eligibilityTier: number,
+    authorityAddress: string
+  ): Promise<{ tender: Tender; txHash: string }> {
+    const tenders = this.getTenders();
+    const newId = tenders.length > 0 ? Math.max(...tenders.map(t => t.id)) + 1 : 101;
+    const deadline = new Date(Date.now() + deadlineDays * 86400000).toISOString();
+
+    const newTender: Tender = {
+      id: newId,
+      title,
+      description,
+      category,
+      authority: authorityAddress,
+      budgetCap,
+      deadline,
+      status: 'OPEN',
+      eligibilityScoreReq: eligibilityTier,
+      bidCommitmentsCount: 0,
+      provenance: 'BLOCKCHAIN'
+    };
+
+    this.saveTender(newTender);
+    const hex = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    return {
+      tender: newTender,
+      txHash: "0x" + hex
+    };
+  }
+
+  public async submitSealedBid(
+    tenderId: number,
+    bidAmount: number,
+    nonce: string,
+    vendorAddress: string,
+    eligibilityToken: string
+  ): Promise<{ record: PrivateBidRecord; commitment: string; txHash: string }> {
+    const tender = this.getTenderById(tenderId);
+    if (!tender) throw new Error("Tender #" + tenderId + " not found.");
+    if (tender.status !== 'OPEN') throw new Error("Tender #" + tenderId + " is closed for bidding.");
+    if (bidAmount > tender.budgetCap) throw new Error("Bid of $" + bidAmount + " exceeds tender budget cap of $" + tender.budgetCap + ".");
+
+    const commitment = await computeBidCommitment(bidAmount, nonce, vendorAddress, tenderId);
+
+    const hex = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const record: PrivateBidRecord = {
+      id: "bid-" + Date.now() + "-" + tenderId,
+      tenderId,
+      tenderTitle: tender.title,
+      bidAmount,
+      nonce,
+      commitment,
+      vendorAddress,
+      eligibilityToken,
+      submittedAt: new Date().toISOString(),
+      status: 'COMMITTED',
+      txHash: "0x" + hex
+    };
+
+    this.saveToVault(record);
+
+    tender.bidCommitmentsCount += 1;
+    this.saveTender(tender);
+
+    return { record, commitment, txHash: record.txHash || '' };
+  }
+
+  public getVaultRecords(): PrivateBidRecord[] {
+    if (typeof window === 'undefined') return [];
+    const stored = localStorage.getItem(APP_CONFIG.PRIVATE_VAULT_STORAGE_KEY);
+    if (!stored) return [];
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return [];
+    }
+  }
+
+  public saveToVault(record: PrivateBidRecord): void {
+    if (typeof window === 'undefined') return;
+    const records = this.getVaultRecords();
+    const idx = records.findIndex(r => r.id === record.id);
+    if (idx >= 0) {
+      records[idx] = record;
+    } else {
+      records.unshift(record);
+    }
+    localStorage.setItem(APP_CONFIG.PRIVATE_VAULT_STORAGE_KEY, JSON.stringify(records));
+  }
+
+  public closeTender(tenderId: number): Tender {
+    const tender = this.getTenderById(tenderId);
+    if (!tender) throw new Error("Tender #" + tenderId + " not found.");
+    tender.status = 'CLOSED';
+    this.saveTender(tender);
+    return tender;
+  }
+
+  public async revealWinner(
+    tenderId: number,
+    winnerAddress: string,
+    winningAmount: number,
+    nonce: string
+  ): Promise<{ tender: Tender; verifiedCommitment: string }> {
+    const tender = this.getTenderById(tenderId);
+    if (!tender) throw new Error("Tender #" + tenderId + " not found.");
+
+    const calculatedCommitment = await computeBidCommitment(winningAmount, nonce, winnerAddress, tenderId);
+
+    tender.status = 'REVEALED';
+    tender.winnerAddress = winnerAddress;
+    tender.winningBidAmount = winningAmount;
+    tender.winnerCommitment = calculatedCommitment;
+    tender.revealTimestamp = new Date().toISOString();
+
+    this.saveTender(tender);
+
+    const records = this.getVaultRecords();
+    records.forEach(r => {
+      if (r.tenderId === tenderId) {
+        if (r.commitment === calculatedCommitment) {
+          r.status = 'WINNER';
+        } else {
+          r.status = 'NOT_SELECTED';
+        }
+        this.saveToVault(r);
+      }
+    });
+
+    return { tender, verifiedCommitment: calculatedCommitment };
+  }
+}

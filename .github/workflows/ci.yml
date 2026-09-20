@@ -1,4 +1,4 @@
-name: CI Pipeline - Confidential Procurement dApp
+name: CI Pipeline - Confidential Procurement Next.js DApp
 
 on:
   push:
@@ -26,10 +26,10 @@ jobs:
       - name: Verify Compact Smart Contract Compilation
         run: npm run compile
 
-      - name: Run Vitest Unit Test Suite
+      - name: Run Vitest Suite (Contract, Privacy, Invariants, Network)
         run: npm test
 
-      - name: Build React UI Frontend
+      - name: Build Next.js Production DApp
         run: |
           cd ui
           npm ci
