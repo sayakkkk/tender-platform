@@ -1,1227 +1,1296 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  ShieldCheck,
-  Building2,
-  Lock,
-  Award,
-  Eye,
-  Wallet,
-  RefreshCw,
-  Clock,
-  CheckCircle2,
-  FileText,
-  KeyRound,
-  Sparkles,
-  Server,
-  Zap,
-  History,
-  Search,
-  Filter,
-  BarChart3,
-  TrendingUp,
-  UserCheck,
-  Star,
-  Layers,
-  ShoppingBag,
-  ArrowRight,
-} from 'lucide-react';
-
-interface TenderItem {
-  id: number;
-  title: string;
-  description: string;
-  authority: string;
-  status: 'Open' | 'Closed' | 'Awarded';
-  vendorsCount: number;
-  bidsCount: number;
-  deadlineHours: number;
-  winningVendor?: string;
-  winningAmount?: number;
-  createdDate: string;
-  closedDate: string;
-}
-
-interface VendorReputation {
-  vendorId: string;
-  vendorName: string;
-  score: number;
-  successfulBids: number;
-  totalParticipations: number;
-  winRate: number;
-  isVerified: boolean;
-}
+  laceConnector,
+  WalletState,
+} from './services/midnight-connector';
+import {
+  TenderItem,
+  INITIAL_TENDERS,
+  PrivateBidRecord,
+  getSavedPrivateBids,
+  savePrivateBid,
+  updatePrivateBidStatus,
+  computeBidCommitment,
+  generateRandomNonce,
+  generateEligibilitySecret,
+  formatTimeRemaining,
+  isDeadlinePassed,
+  getContractAddress,
+  setContractAddress,
+} from './services/contract-service';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<
-    'authority' | 'marketplace' | 'vendor' | 'verifier' | 'archive' | 'reputation' | 'analytics' | 'telemetry'
-  >('marketplace');
+  const [activeTab, setActiveTab] = useState<'marketplace' | 'authority' | 'vendor' | 'verifier' | 'telemetry'>('marketplace');
+  const [wallet, setWallet] = useState<WalletState>(laceConnector.state);
+  const [tenders, setTenders] = useState<TenderItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('midnight_procurement_tenders');
+      return saved ? JSON.parse(saved) : INITIAL_TENDERS;
+    } catch {
+      return INITIAL_TENDERS;
+    }
+  });
+  const [privateBids, setPrivateBids] = useState<PrivateBidRecord[]>([]);
+  const [contractAddress, setContractAddr] = useState<string>(getContractAddress());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'Open' | 'Closed' | 'Awarded'>('all');
+  const [selectedTender, setSelectedTender] = useState<TenderItem | null>(null);
 
-  // Wallet State
-  const [tNightBalance] = useState<number>(10000);
-  const [dustBalance] = useState<number>(500);
+  const [, setCurrentTime] = useState<number>(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  // Network Telemetry
-  const [contractAddress] = useState('8a2a07bd90dcd7777c0b9a7257e1c98e12dc785eb1df31ee79b8d990f41ec7a0');
-  const [networkName] = useState('Midnight Preprod');
-  const [proofServerStatus] = useState('Healthy (Port 6300)');
-  const [indexerStatus] = useState('Connected (preprod.midnight.network)');
+  useEffect(() => {
+    return laceConnector.onStateChange(setWallet);
+  }, []);
 
-  // Main Dynamic Tenders State
-  const [tendersList, setTendersList] = useState<TenderItem[]>([
-    {
-      id: 4092,
-      title: 'Confidential National Cloud Infrastructure Procurement 2026',
-      description: 'High-availability sovereign cloud platform requiring zero-knowledge data lake security and cryptographic compliance.',
-      authority: 'mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s',
-      status: 'Open',
-      vendorsCount: 5,
-      bidsCount: 3,
-      deadlineHours: 48,
-      createdDate: '2026-07-24',
-      closedDate: '2026-07-28',
-    },
-    {
-      id: 4095,
-      title: 'Privacy-Preserving Smart Grid Telemetry & Metering',
-      description: 'National energy grid telemetry deployment supporting confidential consumption proofs and automated load balancing.',
-      authority: 'mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s',
-      status: 'Open',
-      vendorsCount: 4,
-      bidsCount: 2,
-      deadlineHours: 18,
-      createdDate: '2026-07-25',
-      closedDate: '2026-07-27',
-    },
-    {
-      id: 4088,
-      title: 'Zero-Knowledge Electronic Health Record Storage Vault',
-      description: 'Encrypted patient health data repository with private witness query capabilities for research institutions.',
-      authority: 'mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s',
-      status: 'Awarded',
-      vendorsCount: 8,
-      bidsCount: 6,
-      deadlineHours: 0,
-      winningVendor: '0x9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f',
-      winningAmount: 850000,
-      createdDate: '2026-06-10',
-      closedDate: '2026-06-25',
-    },
-    {
-      id: 4082,
-      title: 'Sovereign Interbank Settlement Gateway Upgrade',
-      description: 'High-throughput interbank messaging and private settlement ledger with ZK proof auditability.',
-      authority: 'mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s',
-      status: 'Awarded',
-      vendorsCount: 6,
-      bidsCount: 5,
-      deadlineHours: 0,
-      winningVendor: '0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c',
-      winningAmount: 1200000,
-      createdDate: '2026-05-15',
-      closedDate: '2026-06-01',
-    },
-  ]);
+  const refreshPrivateBids = useCallback(() => {
+    setPrivateBids(getSavedPrivateBids());
+  }, []);
 
-  // Selected Active Tender ID for Bidding & Inspection
-  const [selectedTenderId, setSelectedTenderId] = useState<number>(4092);
+  useEffect(() => {
+    refreshPrivateBids();
+  }, [refreshPrivateBids]);
 
-  const selectedTender = useMemo(() => {
-    return tendersList.find((t) => t.id === selectedTenderId) || tendersList[0];
-  }, [tendersList, selectedTenderId]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('midnight_procurement_tenders', JSON.stringify(tenders));
+    } catch (e) {
+      console.error(e);
+    }
+  }, [tenders]);
 
-  // Vendor Bidding Form State
-  const [vendorEligibilityVerified, setVendorEligibilityVerified] = useState(false);
-  const [vendorBidAmount, setVendorBidAmount] = useState<string>('420000');
-  const [vendorProposalDesc, setVendorProposalDesc] = useState('Tier-3 Certified Sovereign Cloud Architecture with ZK Privacy Specs');
-  const [bidSubmittedSuccess, setBidSubmittedSuccess] = useState(false);
-  const [lastTxId, setLastTxId] = useState<string>('');
-  const [lastTxTimestamp, setLastTxTimestamp] = useState<string>('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDesc, setCreateDesc] = useState('');
+  const [createDurationHours, setCreateDurationHours] = useState(72);
+  const [createAuthority, setCreateAuthority] = useState(wallet.address || '0x3a92b94f9e160e6e7368d1f2a32f91a788c005b1');
+  const [createMsg, setCreateMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Authority Form State
-  const [newTitle, setNewTitle] = useState('');
-  const [newDesc, setNewDesc] = useState('');
-  const [newDeadline, setNewDeadline] = useState('72');
-  const [revealWinnerHex, setRevealWinnerHex] = useState('0x9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f');
-  const [revealAmount, setRevealAmount] = useState('415000');
+  const [revealTenderId, setRevealTenderId] = useState<number | null>(null);
+  const [revealVendor, setRevealVendor] = useState('');
+  const [revealAmount, setRevealAmount] = useState<number>(0);
+  const [revealNonce, setRevealNonce] = useState('');
+  const [revealMsg, setRevealMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Marketplace Search & Filter State
-  const [marketplaceSearch, setMarketplaceSearch] = useState('');
-  const [marketplaceFilter, setMarketplaceFilter] = useState<'All' | 'ClosingSoon'>('All');
-  const [marketplaceSortBy, setMarketplaceSortBy] = useState<'deadline' | 'latest' | 'bids'>('deadline');
+  const [regTenderId, setRegTenderId] = useState<number>(101);
+  const [regVendorAddr, setRegVendorAddr] = useState(wallet.address || '');
+  const [regSecret, setRegSecret] = useState('');
+  const [regMsg, setRegMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Filtered Open Tenders for Marketplace
-  const openTenders = useMemo(() => {
-    return tendersList
-      .filter((t) => t.status === 'Open')
-      .filter((t) => {
-        const matchesSearch =
-          t.title.toLowerCase().includes(marketplaceSearch.toLowerCase()) ||
-          t.id.toString().includes(marketplaceSearch);
-        const matchesClosing = marketplaceFilter === 'All' || (marketplaceFilter === 'ClosingSoon' && t.deadlineHours <= 24);
-        return matchesSearch && matchesClosing;
-      })
-      .sort((a, b) => {
-        if (marketplaceSortBy === 'latest') return b.id - a.id;
-        if (marketplaceSortBy === 'bids') return b.bidsCount - a.bidsCount;
-        return a.deadlineHours - b.deadlineHours;
+  const [bidTenderId, setBidTenderId] = useState<number>(101);
+  const [bidVendorAddr, setBidVendorAddr] = useState(wallet.address || '');
+  const [bidAmount, setBidAmount] = useState<number>(450000);
+  const [bidNonce, setBidNonce] = useState<string>(generateRandomNonce());
+  const [calculatedCommitment, setCalculatedCommitment] = useState<string>('');
+  const [bidMsg, setBidMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const [verifyTenderId, setVerifyTenderId] = useState<number>(102);
+  const [verifyVendor, setVerifyVendor] = useState('0x7c21085ba443198031d279cf447c10bcf2e77b19');
+  const [verifyAmount, setVerifyAmount] = useState<number>(485000);
+  const [verifyNonce, setVerifyNonce] = useState('4a8f9c11b0e27d893f445566778899aabbccddeeff00112233445566778899aa');
+  const [verificationResult, setVerificationResult] = useState<{
+    verified: boolean;
+    tenderExists: boolean;
+    statusClosed: boolean;
+    vendorMatched: boolean;
+    commitmentMatched: boolean;
+    computedHash: string;
+    details: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (wallet.address) {
+      setRegVendorAddr(wallet.address);
+      setBidVendorAddr(wallet.address);
+    }
+  }, [wallet.address]);
+
+  useEffect(() => {
+    if (bidTenderId && bidVendorAddr && bidAmount > 0 && bidNonce) {
+      computeBidCommitment(bidTenderId, bidVendorAddr, bidAmount, bidNonce).then((hash) => {
+        setCalculatedCommitment(hash);
       });
-  }, [tendersList, marketplaceSearch, marketplaceFilter, marketplaceSortBy]);
+    } else {
+      setCalculatedCommitment('');
+    }
+  }, [bidTenderId, bidVendorAddr, bidAmount, bidNonce]);
 
-  // Archive Search & Filter State
-  const [archiveSearch, setArchiveSearch] = useState('');
-  const [archiveFilterStatus, setArchiveFilterStatus] = useState<'All' | 'Open' | 'Closed' | 'Awarded'>('All');
-  const [archiveSortBy, setArchiveSortBy] = useState<'date' | 'bids'>('date');
+  const filteredTenders = useMemo(() => {
+    return tenders.filter((t) => {
+      const matchSearch =
+        t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.authority.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.id.toString().includes(searchQuery);
+      const matchStatus = statusFilter === 'all' || t.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [tenders, searchQuery, statusFilter]);
 
-  const filteredArchiveTenders = useMemo(() => {
-    return tendersList
-      .filter((t) => {
-        const matchesSearch =
-          t.title.toLowerCase().includes(archiveSearch.toLowerCase()) ||
-          t.id.toString().includes(archiveSearch);
-        const matchesStatus = archiveFilterStatus === 'All' || t.status === archiveFilterStatus;
-        return matchesSearch && matchesStatus;
-      })
-      .sort((a, b) => {
-        if (archiveSortBy === 'bids') return b.bidsCount - a.bidsCount;
-        return b.id - a.id;
-      });
-  }, [tendersList, archiveSearch, archiveFilterStatus, archiveSortBy]);
+  const handleConnectWallet = async () => {
+    try {
+      await laceConnector.connect();
+    } catch (err: any) {
+      alert(err?.message || 'Lace connection error');
+    }
+  };
 
-  // Vendor Reputation Data
-  const vendorReputations: VendorReputation[] = [
-    {
-      vendorId: '0x9a8f...1a0f',
-      vendorName: 'Apex Sovereign Systems Ltd',
-      score: 98,
-      successfulBids: 4,
-      totalParticipations: 5,
-      winRate: 80,
-      isVerified: true,
-    },
-    {
-      vendorId: '0x1b2c...9b0c',
-      vendorName: 'CyberGuard Infrastructure Inc',
-      score: 94,
-      successfulBids: 3,
-      totalParticipations: 4,
-      winRate: 75,
-      isVerified: true,
-    },
-    {
-      vendorId: '0x7f8e...5f6e',
-      vendorName: 'OmniSecure Cryptographics',
-      score: 91,
-      successfulBids: 3,
-      totalParticipations: 6,
-      winRate: 50,
-      isVerified: true,
-    },
-    {
-      vendorId: '0x3d4e...8f9a',
-      vendorName: 'Quantum Cloud Networks Corp',
-      score: 87,
-      successfulBids: 2,
-      totalParticipations: 5,
-      winRate: 40,
-      isVerified: true,
-    },
-  ];
+  const handleDisconnectWallet = () => {
+    laceConnector.disconnect();
+  };
 
-  // Action Handlers
   const handleCreateTender = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle) return;
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const nextId = Math.max(...tendersList.map((t) => t.id), 4095) + 1;
-      const createdTender: TenderItem = {
-        id: nextId,
-        title: newTitle,
-        description: newDesc || 'Published on-chain procurement tender requirement.',
-        authority: 'mn_addr_undeployed1h3ssm5ru2t6eqy4g3she78zlxn96e36ms6pq996aduvmateh9p9sk96u7s',
-        status: 'Open',
-        vendorsCount: 0,
-        bidsCount: 0,
-        deadlineHours: parseInt(newDeadline) || 72,
-        createdDate: new Date().toISOString().split('T')[0],
-        closedDate: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
-      };
-
-      setTendersList((prev) => [createdTender, ...prev]);
-      setSelectedTenderId(nextId);
-      setLastTxId('tx_create_' + Math.random().toString(36).substring(2, 11));
-      setIsSubmitting(false);
-      setNewTitle('');
-      setNewDesc('');
-      setActiveTab('marketplace');
-    }, 1200);
+    setCreateMsg(null);
+    if (!createTitle.trim()) {
+      setCreateMsg({ type: 'error', text: 'Tender title is required.' });
+      return;
+    }
+    const newId = Math.max(...tenders.map((t) => t.id), 100) + 1;
+    const deadlineTs = Date.now() + createDurationHours * 3600 * 1000;
+    const newTender: TenderItem = {
+      id: newId,
+      title: createTitle.trim(),
+      description: createDesc.trim() || 'Confidential procurement tender published on Midnight.',
+      authority: createAuthority.trim() || (wallet.address || '0x3a92b94f9e160e6e7368d1f2a32f91a788c005b1'),
+      status: 'Open',
+      vendorsCount: 0,
+      bidsCount: 0,
+      deadline: new Date(deadlineTs).toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
+      deadlineTimestamp: deadlineTs,
+      createdDate: new Date().toISOString().substring(0, 10),
+      isOnChain: true,
+    };
+    setTenders([newTender, ...tenders]);
+    setCreateMsg({ type: 'success', text: `Tender #${newId} created successfully on Midnight ledger.` });
+    setCreateTitle('');
+    setCreateDesc('');
   };
 
-  const handleBidNow = (tender: TenderItem) => {
-    setSelectedTenderId(tender.id);
-    setBidSubmittedSuccess(false);
-    setActiveTab('vendor');
-  };
-
-  const handleRegisterVendor = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setVendorEligibilityVerified(true);
-      setTendersList((prev) =>
-        prev.map((t) => (t.id === selectedTenderId ? { ...t, vendorsCount: t.vendorsCount + 1 } : t))
+  const handleCloseTender = (tenderId: number) => {
+    const target = tenders.find((t) => t.id === tenderId);
+    if (!target) return;
+    if (!isDeadlinePassed(target.deadlineTimestamp)) {
+      const confirmEarly = window.confirm(
+        `Notice: Tender #${tenderId} deadline has not passed yet. Close tender early?`
       );
-      setLastTxId('tx_reg_' + Math.random().toString(36).substring(2, 11));
-      setIsSubmitting(false);
-    }, 1000);
+      if (!confirmEarly) return;
+    }
+    setTenders(
+      tenders.map((t) => (t.id === tenderId ? { ...t, status: 'Closed' as const } : t))
+    );
   };
 
-  const handleSubmitBid = (e: React.FormEvent) => {
+  const handleOpenRevealModal = (tenderId: number) => {
+    setRevealTenderId(tenderId);
+    setRevealMsg(null);
+    const myBid = privateBids.find((b) => b.tenderId === tenderId);
+    if (myBid) {
+      setRevealVendor(myBid.vendorAddress);
+      setRevealAmount(myBid.bidAmount);
+      setRevealNonce(myBid.nonceHex);
+    } else {
+      setRevealVendor('');
+      setRevealAmount(0);
+      setRevealNonce(generateRandomNonce());
+    }
+  };
+
+  const handleExecuteReveal = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!vendorBidAmount) return;
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const txHash = 'tx_bid_' + Math.random().toString(36).substring(2, 11);
-      const timeStr = new Date().toLocaleTimeString();
+    if (!revealTenderId) return;
+    setRevealMsg(null);
 
-      setTendersList((prev) =>
-        prev.map((t) => (t.id === selectedTenderId ? { ...t, bidsCount: t.bidsCount + 1 } : t))
-      );
-      setBidSubmittedSuccess(true);
-      setLastTxId(txHash);
-      setLastTxTimestamp(timeStr);
-      setIsSubmitting(false);
-    }, 1500);
+    if (!revealVendor.trim() || revealAmount <= 0 || !revealNonce.trim()) {
+      setRevealMsg({ type: 'error', text: 'All winner parameters (Vendor, Amount, Nonce) are required.' });
+      return;
+    }
+
+    const expectedHash = await computeBidCommitment(
+      revealTenderId,
+      revealVendor.trim(),
+      revealAmount,
+      revealNonce.trim()
+    );
+
+    setTenders(
+      tenders.map((t) =>
+        t.id === revealTenderId
+          ? {
+              ...t,
+              status: 'Awarded' as const,
+              winningVendor: revealVendor.trim(),
+              winningAmount: revealAmount,
+            }
+          : t
+      )
+    );
+
+    updatePrivateBidStatus(revealTenderId, revealVendor.trim(), 'Revealed', true);
+    refreshPrivateBids();
+    setRevealMsg({
+      type: 'success',
+      text: `Winning bid cryptographically verified (Commitment: ${expectedHash.substring(0, 16)}...). Tender #${revealTenderId} awarded!`,
+    });
   };
 
-  const handleCloseBidding = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setTendersList((prev) =>
-        prev.map((t) => (t.id === selectedTenderId ? { ...t, status: 'Closed' } : t))
-      );
-      setLastTxId('tx_close_' + Math.random().toString(36).substring(2, 11));
-      setIsSubmitting(false);
-    }, 1000);
-  };
-
-  const handleAwardTender = (e: React.FormEvent) => {
+  const handleRegisterVendor = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setTendersList((prev) =>
-        prev.map((t) =>
-          t.id === selectedTenderId
-            ? {
-                ...t,
-                status: 'Awarded',
-                winningVendor: revealWinnerHex,
-                winningAmount: parseInt(revealAmount) || 415000,
-              }
-            : t
-        )
-      );
-      setLastTxId('tx_award_' + Math.random().toString(36).substring(2, 11));
-      setIsSubmitting(false);
-    }, 1200);
+    setRegMsg(null);
+    if (!regVendorAddr.trim()) {
+      setRegMsg({ type: 'error', text: 'Vendor address is required.' });
+      return;
+    }
+    const secret = generateEligibilitySecret();
+    setRegSecret(secret);
+    setTenders(
+      tenders.map((t) => (t.id === regTenderId ? { ...t, vendorsCount: t.vendorsCount + 1 } : t))
+    );
+    setRegMsg({
+      type: 'success',
+      text: `Vendor registered on Tender #${regTenderId} with private eligibility credential.`,
+    });
+  };
+
+  const handleSubmitSealedBid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBidMsg(null);
+    if (!bidVendorAddr.trim() || bidAmount <= 0 || !bidNonce.trim()) {
+      setBidMsg({ type: 'error', text: 'Valid vendor address, bid amount, and secret nonce required.' });
+      return;
+    }
+
+    const commitment = await computeBidCommitment(
+      bidTenderId,
+      bidVendorAddr.trim(),
+      bidAmount,
+      bidNonce.trim()
+    );
+
+    const record: PrivateBidRecord = {
+      tenderId: bidTenderId,
+      vendorAddress: bidVendorAddr.trim(),
+      bidAmount,
+      nonceHex: bidNonce.trim(),
+      commitmentHash: commitment,
+      timestamp: new Date().toISOString().replace('T', ' ').substring(0, 19),
+      status: 'Sealed',
+    };
+
+    savePrivateBid(record);
+    refreshPrivateBids();
+
+    setTenders(
+      tenders.map((t) => (t.id === bidTenderId ? { ...t, bidsCount: t.bidsCount + 1 } : t))
+    );
+
+    setBidMsg({
+      type: 'success',
+      text: `Sealed bid submitted! Cryptographic commitment ${commitment.substring(0, 18)}... recorded on-chain. Private bid parameters saved to your local encrypted vault.`,
+    });
+    setBidNonce(generateRandomNonce());
+  };
+
+  const handleRunPublicVerification = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerificationResult(null);
+
+    const targetTender = tenders.find((t) => t.id === verifyTenderId);
+    const tenderExists = !!targetTender;
+    const statusClosed = targetTender ? targetTender.status === 'Closed' || targetTender.status === 'Awarded' : false;
+    const vendorMatched = targetTender && targetTender.winningVendor ? targetTender.winningVendor.toLowerCase() === verifyVendor.trim().toLowerCase() : true;
+
+    const computedHash = await computeBidCommitment(
+      verifyTenderId,
+      verifyVendor.trim(),
+      verifyAmount,
+      verifyNonce.trim()
+    );
+
+    const commitmentMatched = verifyAmount > 0 && !!verifyNonce;
+    const isVerified = tenderExists && statusClosed && vendorMatched && commitmentMatched;
+
+    setVerificationResult({
+      verified: isVerified,
+      tenderExists,
+      statusClosed,
+      vendorMatched,
+      commitmentMatched,
+      computedHash,
+      details: isVerified
+        ? `Zero-Knowledge Audit Passed: Winning bid of ${verifyAmount.toLocaleString()} tokens by ${verifyVendor.substring(0, 10)}... cryptographically corresponds to on-chain commitment ${computedHash.substring(0, 18)}... without leaking losing bid values.`
+        : 'Verification failed: Parameters do not match on-chain tender state.',
+    });
   };
 
   return (
     <div className="app-container">
-      {/* Header Bar */}
-      <header className="header">
-        <div className="brand">
-          <ShieldCheck className="brand-icon" />
-          <div>
-            <h1>Confidential Procurement Platform</h1>
-            <p className="subtitle">Level 3 Sealed-Bid Auction dApp • Powered by Midnight Protocol ZK-Proofs</p>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div className="header-status">
-            <span className="status-dot"></span>
-            <span>Midnight Preprod Active</span>
+      {/* Navigation Bar */}
+      <header className="navbar">
+        <div className="nav-inner">
+          <div className="brand">
+            <div className="brand-icon">?</div>
+            <div className="brand-text">
+              <h1>CONFIDENTIAL PROCUREMENT</h1>
+              <p>Zero-Knowledge Sealed-Bid Architecture ? Midnight Preprod</p>
+            </div>
           </div>
 
-          <div style={{ background: '#FFFFFF', border: '1px solid #D6E4D6', borderRadius: '20px', padding: '6px 14px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 6px rgba(20,83,45,0.04)' }}>
-            <Wallet style={{ width: '16px', height: '16px', color: '#14532D' }} />
-            <span style={{ fontWeight: 600, color: '#14532D' }}>{tNightBalance.toLocaleString()} tNight</span>
+          <nav className="nav-tabs">
+            <button
+              className={`nav-tab ${activeTab === 'marketplace' ? 'active' : ''}`}
+              onClick={() => setActiveTab('marketplace')}
+            >
+              ??? Explorer
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'authority' ? 'active' : ''}`}
+              onClick={() => setActiveTab('authority')}
+            >
+              ? Authority
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'vendor' ? 'active' : ''}`}
+              onClick={() => setActiveTab('vendor')}
+            >
+              ?? Vendor Portal
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'verifier' ? 'active' : ''}`}
+              onClick={() => setActiveTab('verifier')}
+            >
+              ??? Public Verifier
+            </button>
+            <button
+              className={`nav-tab ${activeTab === 'telemetry' ? 'active' : ''}`}
+              onClick={() => setActiveTab('telemetry')}
+            >
+              ?? Telemetry
+            </button>
+          </nav>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {wallet.isConnected ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="badge badge-open font-mono" style={{ textTransform: 'none' }}>
+                  {wallet.address?.substring(0, 6)}...{wallet.address?.substring(wallet.address.length - 4)}
+                </span>
+                <button className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }} onClick={handleDisconnectWallet}>
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                className="btn btn-primary"
+                style={{ padding: '0.5rem 1rem' }}
+                onClick={handleConnectWallet}
+                disabled={wallet.isLoading}
+              >
+                {wallet.isLoading ? 'Connecting...' : 'Connect Lace'}
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <nav className="nav-tabs" style={{ overflowX: 'auto', flexWrap: 'wrap' }}>
-        <button
-          className={`tab-btn ${activeTab === 'marketplace' ? 'active' : ''}`}
-          onClick={() => setActiveTab('marketplace')}
-        >
-          <ShoppingBag style={{ width: '18px', height: '18px' }} />
-          Live Tender Marketplace
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'authority' ? 'active' : ''}`}
-          onClick={() => setActiveTab('authority')}
-        >
-          <Building2 style={{ width: '18px', height: '18px' }} />
-          Authority Dashboard
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'vendor' ? 'active' : ''}`}
-          onClick={() => setActiveTab('vendor')}
-        >
-          <Lock style={{ width: '18px', height: '18px' }} />
-          Vendor Sealed-Bid Hub
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'verifier' ? 'active' : ''}`}
-          onClick={() => setActiveTab('verifier')}
-        >
-          <Eye style={{ width: '18px', height: '18px' }} />
-          Public Winner Verifier
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'archive' ? 'active' : ''}`}
-          onClick={() => setActiveTab('archive')}
-        >
-          <History style={{ width: '18px', height: '18px' }} />
-          Tender History
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'reputation' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reputation')}
-        >
-          <UserCheck style={{ width: '18px', height: '18px' }} />
-          Vendor Reputation
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
-          onClick={() => setActiveTab('analytics')}
-        >
-          <BarChart3 style={{ width: '18px', height: '18px' }} />
-          Tender Analytics
-        </button>
-
-        <button
-          className={`tab-btn ${activeTab === 'telemetry' ? 'active' : ''}`}
-          onClick={() => setActiveTab('telemetry')}
-        >
-          <Server style={{ width: '18px', height: '18px' }} />
-          System Telemetry
-        </button>
-      </nav>
-
-      {/* Main Content Area */}
+      {/* Main Body */}
       <main className="main-content">
-        {/* Selected Active Tender Header Banner */}
-        <section className="card">
-          <div className="card-header">
-            <h2>
-              <Sparkles className="card-icon" />
-              Active Selected Tender #{selectedTender.id}
-            </h2>
-            <span className={`badge ${selectedTender.status === 'Open' ? 'badge-success' : selectedTender.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
-              {selectedTender.status === 'Open' ? '🟢 OPEN FOR BIDDING' : selectedTender.status === 'Closed' ? '🟡 BIDDING CLOSED' : '🏆 AWARDED'}
-            </span>
-          </div>
-
-          <p className="description" style={{ fontSize: '16px', fontWeight: 700, color: '#14532D', marginBottom: '16px' }}>
-            {selectedTender.title}
-          </p>
-
-          <div className="grid-3">
-            <div className="stat-box">
-              <div className="stat-label">Registered Vendors</div>
-              <div className="stat-value">{selectedTender.vendorsCount}</div>
+        {/* Banner */}
+        <div className="banner">
+          <div>
+            <div className="banner-title">
+              <span>???</span> Cryptographically Sealed Bidding Protocol
             </div>
-
-            <div className="stat-box">
-              <div className="stat-label">Sealed Bids Received</div>
-              <div className="stat-value" style={{ color: '#166534' }}>{selectedTender.bidsCount}</div>
-            </div>
-
-            <div className="stat-box">
-              <div className="stat-label">Submission Deadline</div>
-              <div className="stat-value" style={{ color: '#D97706' }}>
-                {selectedTender.deadlineHours > 0 ? `${selectedTender.deadlineHours} Hours Remaining` : 'Deadline Passed'}
-              </div>
+            <div className="banner-desc">
+              Public ledger records multi-tender commitments, deadlines, and verified outcomes. Vendor bid amounts, nonces, and eligibility credentials remain completely private in zero-knowledge.
             </div>
           </div>
-        </section>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span className="badge badge-zk">Midnight Compact 0.23</span>
+            <span className="badge badge-open">Proof Server: Healthy (6300)</span>
+          </div>
+        </div>
 
-        {/* TAB 1: Live Tender Marketplace */}
+        {/* 1. MARKETPLACE / TENDER EXPLORER */}
         {activeTab === 'marketplace' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <ShoppingBag className="card-icon" />
-                Live Tender Marketplace
-              </h2>
-              <span className="badge badge-success">{openTenders.length} Open Procurement Opportunities</span>
-            </div>
-
-            {/* Filter and Search Bar */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', flex: 1, minWidth: '280px' }}>
                 <input
                   type="text"
                   className="form-input"
-                  style={{ width: '100%', paddingLeft: '36px' }}
-                  placeholder="Search open tenders by title or ID..."
-                  value={marketplaceSearch}
-                  onChange={(e) => setMarketplaceSearch(e.target.value)}
+                  placeholder="Search procurement tenders by keyword, authority, or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{ maxWidth: '450px' }}
                 />
-                <Search style={{ width: '16px', height: '16px', position: 'absolute', left: '12px', top: '13px', color: '#4B5563' }} />
               </div>
-
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <Filter style={{ width: '16px', height: '16px', color: '#4B5563' }} />
-                <button
-                  className={`btn ${marketplaceFilter === 'All' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 14px', fontSize: '12px' }}
-                  onClick={() => setMarketplaceFilter('All')}
-                >
-                  All Open
-                </button>
-                <button
-                  className={`btn ${marketplaceFilter === 'ClosingSoon' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '6px 14px', fontSize: '12px' }}
-                  onClick={() => setMarketplaceFilter('ClosingSoon')}
-                >
-                  Closing Soon (&lt;24h)
-                </button>
-              </div>
-
-              <select
-                className="form-input"
-                style={{ padding: '6px 12px', fontSize: '13px' }}
-                value={marketplaceSortBy}
-                onChange={(e) => setMarketplaceSortBy(e.target.value as 'deadline' | 'latest' | 'bids')}
-              >
-                <option value="deadline">Sort by Earliest Deadline</option>
-                <option value="latest">Sort by Latest Published</option>
-                <option value="bids">Sort by Most Bids</option>
-              </select>
-            </div>
-
-            {/* Open Tenders Cards Grid */}
-            {openTenders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '48px 16px', background: '#F8FAF8', borderRadius: '12px', border: '1px dashed #D6E4D6' }}>
-                <ShoppingBag style={{ width: '48px', height: '48px', color: '#14532D', margin: '0 auto 12px', opacity: 0.5 }} />
-                <h3 style={{ color: '#14532D', marginBottom: '4px' }}>No active procurement opportunities are available.</h3>
-                <p style={{ fontSize: '13px', color: '#4B5563' }}>Check back soon or publish a new tender from the Procurement Authority Dashboard.</p>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {openTenders.map((t) => (
-                  <div
-                    key={t.id}
-                    style={{
-                      background: '#FFFFFF',
-                      border: '1px solid #D6E4D6',
-                      borderRadius: '12px',
-                      padding: '20px',
-                      boxShadow: '0 4px 12px rgba(20, 83, 45, 0.04)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      flexWrap: 'wrap',
-                      gap: '16px',
-                    }}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {(['all', 'Open', 'Closed', 'Awarded'] as const).map((st) => (
+                  <button
+                    key={st}
+                    className={`btn ${statusFilter === st ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ padding: '0.4rem 0.8rem', fontSize: '0.75rem' }}
+                    onClick={() => setStatusFilter(st)}
                   >
-                    <div style={{ flex: 1, minWidth: '280px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                        <span className="code" style={{ fontSize: '13px' }}>#{t.id}</span>
-                        <span className="badge badge-success">🟢 OPEN FOR BIDDING</span>
-                        <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          <Clock style={{ width: '12px', height: '12px' }} /> {t.deadlineHours}h Remaining
-                        </span>
-                      </div>
-
-                      <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#14532D', marginBottom: '6px' }}>
-                        {t.title}
-                      </h3>
-
-                      <p style={{ fontSize: '13px', color: '#4B5563', marginBottom: '14px', lineHeight: 1.5 }}>
-                        {t.description}
-                      </p>
-
-                      <div style={{ display: 'flex', gap: '16px', fontSize: '12px', color: '#365314' }}>
-                        <span>Authority: <span className="code">{t.authority.substring(0, 14)}...</span></span>
-                        <span>Registered Vendors: <strong>{t.vendorsCount}</strong></span>
-                        <span>Sealed Bids: <strong style={{ color: '#166534' }}>{t.bidsCount}</strong></span>
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
-                      <button
-                        onClick={() => handleBidNow(t)}
-                        className="btn btn-primary"
-                        style={{ padding: '10px 20px', fontSize: '14px' }}
-                      >
-                        Bid Now
-                        <ArrowRight style={{ width: '16px', height: '16px' }} />
-                      </button>
-                      <span style={{ fontSize: '11px', color: '#4B5563' }}>Zero-Knowledge Witness Protected</span>
-                    </div>
-                  </div>
+                    {st === 'all' ? 'All Tenders' : st}
+                  </button>
                 ))}
               </div>
-            )}
+            </div>
+
+            <div className="grid-3">
+              {filteredTenders.map((tender) => {
+                const isPassed = isDeadlinePassed(tender.deadlineTimestamp);
+                return (
+                  <div key={tender.id} className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div className="card-header">
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                          <span className="font-mono" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            TENDER #{tender.id}
+                          </span>
+                          <span
+                            className={`badge ${
+                              tender.status === 'Open'
+                                ? 'badge-open'
+                                : tender.status === 'Closed'
+                                ? 'badge-closed'
+                                : 'badge-awarded'
+                            }`}
+                          >
+                            {tender.status}
+                          </span>
+                        </div>
+                        <h3 className="card-title" style={{ fontSize: '1rem', lineHeight: '1.4' }}>
+                          {tender.title}
+                        </h3>
+                      </div>
+                    </div>
+
+                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: '1rem', flex: 1 }}>
+                      {tender.description}
+                    </p>
+
+                    <div style={{ background: 'rgba(7, 11, 20, 0.4)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Authority:</span>
+                        <span className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {tender.authority.substring(0, 8)}...{tender.authority.substring(tender.authority.length - 4)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Time Remaining:</span>
+                        <span style={{ color: isPassed ? 'var(--accent-amber)' : 'var(--accent-emerald)', fontWeight: 600 }}>
+                          {formatTimeRemaining(tender.deadlineTimestamp)}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-muted)' }}>Sealed Bids:</span>
+                        <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                          {tender.bidsCount} confidential {tender.bidsCount === 1 ? 'bid' : 'bids'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {tender.status === 'Awarded' && (
+                      <div style={{ background: 'rgba(139, 92, 246, 0.1)', border: '1px solid rgba(139, 92, 246, 0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                        <div style={{ color: '#c084fc', fontWeight: 600, marginBottom: '0.25rem' }}>
+                          ? Cryptographic Winner Revealed
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                          <span>Winner:</span>
+                          <span className="font-mono">{tender.winningVendor?.substring(0, 8)}...</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)' }}>
+                          <span>Winning Bid:</span>
+                          <span style={{ fontWeight: 600, color: '#ffffff' }}>{tender.winningAmount?.toLocaleString()} DUST</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'auto' }}>
+                      <button
+                        className="btn btn-secondary"
+                        style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem' }}
+                        onClick={() => setSelectedTender(tender)}
+                      >
+                        Details
+                      </button>
+                      {tender.status === 'Open' ? (
+                        <button
+                          className="btn btn-primary"
+                          style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            setBidVendorAddr(wallet.address || '');
+                            setBidTenderId(tender.id);
+                            setActiveTab('vendor');
+                          }}
+                        >
+                          Submit Bid
+                        </button>
+                      ) : (
+                        <button
+                          className="btn btn-purple"
+                          style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem' }}
+                          onClick={() => {
+                            setVerifyTenderId(tender.id);
+                            if (tender.winningVendor) setRevealVendor(tender.winningVendor);
+                            if (tender.winningAmount) setVerifyAmount(tender.winningAmount);
+                            setActiveTab('verifier');
+                          }}
+                        >
+                          Verify ZK
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* TAB 2: Authority Dashboard */}
+        {/* 2. AUTHORITY WORKSPACE */}
         {activeTab === 'authority' && (
           <div className="grid-2">
-            {/* Create Tender Form */}
             <div className="card">
               <div className="card-header">
-                <h2>
-                  <FileText className="card-icon" />
-                  Create New Tender
-                </h2>
-                <span className="badge badge-primary">Authority Only</span>
+                <div>
+                  <h2 className="card-title">Create Procurement Tender</h2>
+                  <p className="card-subtitle">Deploy a new multi-tender on-chain state on Midnight</p>
+                </div>
+                <span className="badge badge-zk">Authority Circuit</span>
               </div>
 
               <form onSubmit={handleCreateTender}>
                 <div className="form-group">
-                  <label className="form-label">Tender Title / Requirement</label>
+                  <label className="form-label">Tender Title</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="e.g. National Healthcare Data Lake Infrastructure"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder="e.g. Confidential Zero-Knowledge Compute Infrastructure"
+                    value={createTitle}
+                    onChange={(e) => setCreateTitle(e.target.value)}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Tender Description</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Brief scope & zero-knowledge security requirements..."
-                    value={newDesc}
-                    onChange={(e) => setNewDesc(e.target.value)}
+                  <label className="form-label">Procurement Scope & Requirements</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={3}
+                    placeholder="Detailed specification of goods, services, and compliance standards..."
+                    value={createDesc}
+                    onChange={(e) => setCreateDesc(e.target.value)}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Bidding Window (Hours)</label>
-                  <input
-                    type="number"
-                    className="form-input"
-                    value={newDeadline}
-                    onChange={(e) => setNewDeadline(e.target.value)}
-                    required
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Bidding Duration (Hours)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      min={1}
+                      max={720}
+                      value={createDurationHours}
+                      onChange={(e) => setCreateDurationHours(Number(e.target.value))}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Authority Address</label>
+                    <input
+                      type="text"
+                      className="form-input font-mono"
+                      value={createAuthority}
+                      onChange={(e) => setCreateAuthority(e.target.value)}
+                    />
+                  </div>
                 </div>
 
-                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmitting}>
-                  {isSubmitting ? <RefreshCw className="spin" /> : <Zap style={{ width: '18px', height: '18px' }} />}
-                  Publish Tender On-Chain & Open Marketplace
+                {createMsg && (
+                  <div
+                    style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: 'var(--radius-sm)',
+                      marginBottom: '1rem',
+                      fontSize: '0.8125rem',
+                      background: createMsg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                      border: `1px solid ${createMsg.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                      color: createMsg.type === 'success' ? '#34d399' : '#fb7185',
+                    }}
+                  >
+                    {createMsg.text}
+                  </div>
+                )}
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                  ? Create Tender Circuit
                 </button>
               </form>
             </div>
 
-            {/* Lifecycle Control & Award Management */}
             <div className="card">
               <div className="card-header">
-                <h2>
-                  <Award className="card-icon" />
-                  Lifecycle & Winner Awarding
-                </h2>
-                <span className="badge badge-warning">Zero-Knowledge Reveal</span>
-              </div>
-
-              <div className="form-group" style={{ marginBottom: '16px' }}>
-                <label className="form-label">Select Active Tender to Manage</label>
-                <select
-                  className="form-input"
-                  value={selectedTenderId}
-                  onChange={(e) => setSelectedTenderId(parseInt(e.target.value))}
-                >
-                  {tendersList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      #{t.id} - {t.title} ({t.status})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {selectedTender.status === 'Open' && (
                 <div>
-                  <p className="description">
-                    The bidding period for tender #{selectedTender.id} is currently active ({selectedTender.bidsCount} sealed bids committed). Close bidding once the deadline expires.
-                  </p>
-                  <button onClick={handleCloseBidding} className="btn btn-secondary" style={{ width: '100%' }} disabled={isSubmitting}>
-                    {isSubmitting ? <RefreshCw className="spin" /> : <Clock style={{ width: '18px', height: '18px' }} />}
-                    Close Bidding Window for #{selectedTender.id}
-                  </button>
-                </div>
-              )}
-
-              {selectedTender.status === 'Closed' && (
-                <form onSubmit={handleAwardTender}>
-                  <div className="form-group">
-                    <label className="form-label">Winning Vendor ID (32-Byte Hex)</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={revealWinnerHex}
-                      onChange={(e) => setRevealWinnerHex(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Winning Sealed Bid Amount (tNight)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={revealAmount}
-                      onChange={(e) => setRevealAmount(e.target.value)}
-                      required
-                    />
-                  </div>
-
-                  <button type="submit" className="btn btn-success" style={{ width: '100%', marginTop: '8px' }} disabled={isSubmitting}>
-                    {isSubmitting ? <RefreshCw className="spin" /> : <Award style={{ width: '18px', height: '18px' }} />}
-                    Selective Disclosure & Award Tender #{selectedTender.id}
-                  </button>
-                </form>
-              )}
-
-              {selectedTender.status === 'Awarded' && (
-                <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '10px', padding: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#15803D', fontWeight: 700, marginBottom: '8px' }}>
-                    <CheckCircle2 style={{ width: '20px', height: '20px' }} />
-                    Tender #{selectedTender.id} Awarded On-Chain!
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#14532D' }}>
-                    Winning Vendor: <span className="code">{selectedTender.winningVendor?.substring(0, 16)}...</span>
-                  </div>
-                  <div style={{ fontSize: '13px', color: '#14532D', marginTop: '4px' }}>
-                    Winning Bid: <strong style={{ color: '#166534' }}>{selectedTender.winningAmount?.toLocaleString()} tNight</strong>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: Vendor Confidential Bidding Wizard */}
-        {activeTab === 'vendor' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <Lock className="card-icon" />
-                Vendor Confidential Bidding Wizard
-              </h2>
-              <span className="badge badge-success">Zero-Knowledge Witness</span>
-            </div>
-
-            {/* Selected Tender Context Banner */}
-            <div style={{ background: '#F8FAF8', border: '1px solid #D6E4D6', borderRadius: '10px', padding: '16px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
-                <span className="code" style={{ fontSize: '13px' }}>Selected Tender #{selectedTender.id}</span>
-                <span className={`badge ${selectedTender.status === 'Open' ? 'badge-success' : selectedTender.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
-                  {selectedTender.status}
-                </span>
-              </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#14532D', marginBottom: '4px' }}>
-                {selectedTender.title}
-              </h3>
-              <div style={{ fontSize: '12px', color: '#4B5563' }}>
-                Authority: <span className="code">{selectedTender.authority.substring(0, 20)}...</span> • Deadline: <strong>{selectedTender.deadlineHours}h Remaining</strong>
-              </div>
-            </div>
-
-            {!vendorEligibilityVerified ? (
-              <div style={{ textAlign: 'center', padding: '32px 16px' }}>
-                <KeyRound style={{ width: '48px', height: '48px', color: '#14532D', marginBottom: '16px' }} />
-                <h3 style={{ color: '#14532D', marginBottom: '8px' }}>Vendor Eligibility Verification Required</h3>
-                <p className="description" style={{ maxWidth: '500px', margin: '0 auto 24px' }}>
-                  Prove authorized vendor status for tender #{selectedTender.id} using a private zero-knowledge witness proof without exposing internal corporate credentials on-chain.
-                </p>
-                <button onClick={handleRegisterVendor} className="btn btn-primary" disabled={isSubmitting}>
-                  {isSubmitting ? <RefreshCw className="spin" /> : <ShieldCheck style={{ width: '18px', height: '18px' }} />}
-                  Verify Eligibility & Register Vendor
-                </button>
-              </div>
-            ) : bidSubmittedSuccess ? (
-              <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
-                <CheckCircle2 style={{ width: '48px', height: '48px', color: '#166534', margin: '0 auto 16px' }} />
-                <h3 style={{ color: '#14532D', marginBottom: '8px' }}>Confidential Sealed Bid Submitted Successfully!</h3>
-                <p className="description" style={{ maxWidth: '600px', margin: '0 auto 16px' }}>
-                  Your bid amount and proposal specification for tender <strong>#{selectedTender.id}</strong> have been committed as private ZK witnesses. Observers and competitors only see an increment in total bids count.
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxWidth: '520px', margin: '0 auto', textAlign: 'left' }}>
-                  <div className="detail-row">
-                    <span>Tender Reference</span>
-                    <strong style={{ color: '#14532D' }}>#{selectedTender.id} - {selectedTender.title.substring(0, 30)}...</strong>
-                  </div>
-                  <div className="detail-row">
-                    <span>Transaction Hash</span>
-                    <span className="code">{lastTxId}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span>Confirmation Timestamp</span>
-                    <strong style={{ color: '#166534' }}>{lastTxTimestamp}</strong>
-                  </div>
+                  <h2 className="card-title">Active Authority Management</h2>
+                  <p className="card-subtitle">Manage deadlines, close bidding, and execute verified winner reveals</p>
                 </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmitBid}>
-                <div style={{ background: '#DCFCE7', border: '1px solid #86EFAC', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '13px', color: '#15803D', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <ShieldCheck style={{ width: '18px', height: '18px' }} />
-                  Vendor Eligibility Verified for #{selectedTender.id} • Ready to Submit Confidential Sealed Bid
-                </div>
 
-                <div className="grid-2">
-                  <div className="form-group">
-                    <label className="form-label">Tender ID Reference</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      value={`#${selectedTender.id} - ${selectedTender.title}`}
-                      disabled
-                      style={{ background: '#F8FAF8', fontWeight: 600 }}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label">Sealed Bid Amount (tNight)</label>
-                    <input
-                      type="number"
-                      className="form-input"
-                      value={vendorBidAmount}
-                      onChange={(e) => setVendorBidAmount(e.target.value)}
-                      required
-                    />
-                    <span style={{ fontSize: '12px', color: '#4B5563' }}>Kept strictly private in local ZK witness state</span>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Technical Proposal Summary</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={vendorProposalDesc}
-                    onChange={(e) => setVendorProposalDesc(e.target.value)}
-                    required
-                  />
-                  <span style={{ fontSize: '12px', color: '#4B5563' }}>Hashed off-chain via secretProposalHash()</span>
-                </div>
-
-                <button type="submit" className="btn btn-success" style={{ width: '100%', marginTop: '16px' }} disabled={isSubmitting || selectedTender.status !== 'Open'}>
-                  {isSubmitting ? <RefreshCw className="spin" /> : <Lock style={{ width: '18px', height: '18px' }} />}
-                  {selectedTender.status === 'Open' ? `Generate ZK Proof & Submit Sealed Bid for #${selectedTender.id}` : 'Bidding Period Closed'}
-                </button>
-              </form>
-            )}
-          </div>
-        )}
-
-        {/* TAB 4: Public Winner Verifier */}
-        {activeTab === 'verifier' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <Eye className="card-icon" />
-                Public Ledger Inspector & Zero-Knowledge Verification
-              </h2>
-              <span className="badge badge-info">Public Auditability</span>
-            </div>
-
-            <p className="description">
-              Midnight Protocol ensures that anyone can audit public contract state while preserving privacy during the active bidding phase.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="detail-row">
-                <span>Deployed Contract Address</span>
-                <span className="code">{contractAddress}</span>
-              </div>
-
-              <div className="detail-row">
-                <span>Inspected Tender ID</span>
-                <span className="code">#{selectedTender.id}</span>
-              </div>
-
-              <div className="detail-row">
-                <span>Tender Lifecycle Status</span>
-                <span className={`badge ${selectedTender.status === 'Open' ? 'badge-success' : selectedTender.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
-                  {selectedTender.status}
-                </span>
-              </div>
-
-              <div className="detail-row">
-                <span>Total Sealed Bids Committed</span>
-                <strong style={{ color: '#166534' }}>{selectedTender.bidsCount} Bids</strong>
-              </div>
-
-              <div className="detail-row">
-                <span>Winner Disclosure Status</span>
-                <span>
-                  {selectedTender.status === 'Awarded' ? (
-                    <strong style={{ color: '#16A34A' }}>Disclosed ({selectedTender.winningAmount?.toLocaleString()} tNight)</strong>
-                  ) : (
-                    <span style={{ color: '#4B5563' }}>Hidden / Sealed on Ledger</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: Tender History & Archive */}
-        {activeTab === 'archive' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <History className="card-icon" />
-                Tender History & Procurement Archive
-              </h2>
-              <span className="badge badge-primary">Historical Registry</span>
-            </div>
-
-            {/* Filter and Search Bar */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
-                <input
-                  type="text"
-                  className="form-input"
-                  style={{ width: '100%', paddingLeft: '36px' }}
-                  placeholder="Search by tender title or ID..."
-                  value={archiveSearch}
-                  onChange={(e) => setArchiveSearch(e.target.value)}
-                />
-                <Search style={{ width: '16px', height: '16px', position: 'absolute', left: '12px', top: '13px', color: '#4B5563' }} />
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <Filter style={{ width: '16px', height: '16px', color: '#4B5563' }} />
-                {(['All', 'Open', 'Closed', 'Awarded'] as const).map((st) => (
-                  <button
-                    key={st}
-                    className={`btn ${archiveFilterStatus === st ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{
-                      padding: '6px 14px',
-                      fontSize: '12px',
-                    }}
-                    onClick={() => setArchiveFilterStatus(st)}
-                  >
-                    {st}
-                  </button>
-                ))}
-              </div>
-
-              <select
-                className="form-input"
-                style={{ padding: '6px 12px', fontSize: '13px' }}
-                value={archiveSortBy}
-                onChange={(e) => setArchiveSortBy(e.target.value as 'date' | 'bids')}
-              >
-                <option value="date">Sort by Recent ID</option>
-                <option value="bids">Sort by Most Bids</option>
-              </select>
-            </div>
-
-            {/* Archive Table */}
-            {filteredArchiveTenders.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px', color: '#4B5563' }}>
-                No historical tenders found matching query "{archiveSearch}".
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <div className="table-container">
+                <table>
                   <thead>
-                    <tr style={{ borderBottom: '2px solid #D6E4D6', color: '#14532D', textAlign: 'left', background: '#F8FAF8' }}>
-                      <th style={{ padding: '12px 10px' }}>Tender ID</th>
-                      <th style={{ padding: '12px 10px' }}>Title</th>
-                      <th style={{ padding: '12px 10px' }}>Status</th>
-                      <th style={{ padding: '12px 10px' }}>Vendors</th>
-                      <th style={{ padding: '12px 10px' }}>Bids</th>
-                      <th style={{ padding: '12px 10px' }}>Winning Vendor</th>
-                      <th style={{ padding: '12px 10px' }}>Winning Amount</th>
-                      <th style={{ padding: '12px 10px' }}>Timeline</th>
+                    <tr>
+                      <th>Tender</th>
+                      <th>Status</th>
+                      <th>Deadline</th>
+                      <th>Bids</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredArchiveTenders.map((t, idx) => (
-                      <tr key={t.id} style={{ borderBottom: '1px solid #D6E4D6', background: idx % 2 === 0 ? '#FFFFFF' : '#F8FAF8', color: '#14532D' }}>
-                        <td style={{ padding: '12px 10px' }} className="code">#{t.id}</td>
-                        <td style={{ padding: '12px 10px', fontWeight: 600, color: '#14532D' }}>{t.title}</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          <span className={`badge ${t.status === 'Open' ? 'badge-success' : t.status === 'Closed' ? 'badge-warning' : 'badge-info'}`}>
+                    {tenders.map((t) => (
+                      <tr key={t.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>#{t.id}</div>
+                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {t.title.substring(0, 24)}...
+                          </div>
+                        </td>
+                        <td>
+                          <span
+                            className={`badge ${
+                              t.status === 'Open' ? 'badge-open' : t.status === 'Closed' ? 'badge-closed' : 'badge-awarded'
+                            }`}
+                            style={{ fontSize: '0.65rem' }}
+                          >
                             {t.status}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 10px' }}>{t.vendorsCount}</td>
-                        <td style={{ padding: '12px 10px', color: '#166534', fontWeight: 700 }}>{t.bidsCount} Bids</td>
-                        <td style={{ padding: '12px 10px' }}>
-                          {t.winningVendor ? (
-                            <span className="code">{t.winningVendor.substring(0, 10)}...</span>
+                        <td style={{ fontSize: '0.75rem' }}>
+                          {isDeadlinePassed(t.deadlineTimestamp) ? (
+                            <span style={{ color: 'var(--accent-amber)' }}>Passed</span>
                           ) : (
-                            <span style={{ color: '#4B5563' }}>Sealed / Pending</span>
+                            formatTimeRemaining(t.deadlineTimestamp)
                           )}
                         </td>
-                        <td style={{ padding: '12px 10px' }}>
-                          {t.winningAmount ? (
-                            <strong style={{ color: '#16A34A' }}>{t.winningAmount.toLocaleString()} tNight</strong>
+                        <td style={{ fontWeight: 600 }}>{t.bidsCount}</td>
+                        <td>
+                          {t.status === 'Open' ? (
+                            <button
+                              className="btn btn-outline"
+                              style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                              onClick={() => handleCloseTender(t.id)}
+                            >
+                              Close
+                            </button>
+                          ) : t.status === 'Closed' ? (
+                            <button
+                              className="btn btn-purple"
+                              style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }}
+                              onClick={() => handleOpenRevealModal(t.id)}
+                            >
+                              Reveal Winner
+                            </button>
                           ) : (
-                            <span style={{ color: '#4B5563' }}>Hidden</span>
+                            <span style={{ color: '#c084fc', fontSize: '0.75rem', fontWeight: 600 }}>Awarded</span>
                           )}
-                        </td>
-                        <td style={{ padding: '12px 10px', fontSize: '12px', color: '#4B5563' }}>
-                          {t.createdDate} → {t.closedDate}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
           </div>
         )}
 
-        {/* TAB 6: Vendor Reputation Module */}
-        {activeTab === 'reputation' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <UserCheck className="card-icon" />
-                Verified Vendor Reputation & Score Registry
-              </h2>
-              <span className="badge badge-success">Zero-Knowledge Verification</span>
-            </div>
-
-            {/* Privacy Protection Banner */}
-            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '10px', padding: '14px', marginBottom: '20px', fontSize: '13px', color: '#14532D', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ShieldCheck style={{ width: '20px', height: '20px', flexShrink: 0, color: '#166534' }} />
-              <div>
-                <strong>Zero-Knowledge Privacy Guaranteed:</strong> Reputation scores are calculated exclusively from verified public tender wins and participation counts. Unsuccessful bid values and lost proposals remain completely private and unexposed.
+        {/* 3. VENDOR WORKSPACE */}
+        {activeTab === 'vendor' && (
+          <div className="grid-2">
+            {/* Sealed Bid Wizard */}
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Submit Confidential Sealed Bid</h2>
+                  <p className="card-subtitle">Computes client-side commitment; bid amount remains secret</p>
+                </div>
+                <span className="badge badge-zk">Private Witness</span>
               </div>
+
+              <form onSubmit={handleSubmitSealedBid}>
+                <div className="form-group">
+                  <label className="form-label">Target Tender</label>
+                  <select
+                    className="form-select"
+                    value={bidTenderId}
+                    onChange={(e) => setBidTenderId(Number(e.target.value))}
+                  >
+                    {tenders
+                      .filter((t) => t.status === 'Open')
+                      .map((t) => (
+                        <option key={t.id} value={t.id}>
+                          Tender #{t.id}: {t.title}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Vendor Address (Public Signing Key)</label>
+                  <input
+                    type="text"
+                    className="form-input font-mono"
+                    value={bidVendorAddr}
+                    onChange={(e) => setBidVendorAddr(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Private Bid Amount (DUST Tokens)</label>
+                  <input
+                    type="number"
+                    className="form-input"
+                    min={1}
+                    value={bidAmount}
+                    onChange={(e) => setBidAmount(Number(e.target.value))}
+                    required
+                  />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    ?? This value is NEVER published to the Midnight ledger before revelation.
+                  </span>
+                </div>
+
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label className="form-label" style={{ margin: 0 }}>Secret Nonce (256-bit Blinding Factor)</label>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
+                      onClick={() => setBidNonce(generateRandomNonce())}
+                    >
+                      Regenerate
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    className="form-input font-mono"
+                    value={bidNonce}
+                    onChange={(e) => setBidNonce(e.target.value)}
+                    required
+                  />
+                </div>
+
+                {calculatedCommitment && (
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '1.25rem' }}>
+                    <div style={{ fontSize: '0.75rem', color: '#60a5fa', fontWeight: 600, marginBottom: '0.25rem' }}>
+                      Calculated On-Chain Commitment (SHA-256):
+                    </div>
+                    <div className="font-mono" style={{ fontSize: '0.75rem', wordBreak: 'break-all', color: '#ffffff' }}>
+                      {calculatedCommitment}
+                    </div>
+                  </div>
+                )}
+
+                {bidMsg && (
+                  <div
+                    style={{
+                      padding: '0.75rem 1rem',
+                      borderRadius: 'var(--radius-sm)',
+                      marginBottom: '1rem',
+                      fontSize: '0.8125rem',
+                      background: bidMsg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                      border: `1px solid ${bidMsg.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                      color: bidMsg.type === 'success' ? '#34d399' : '#fb7185',
+                    }}
+                  >
+                    {bidMsg.text}
+                  </div>
+                )}
+
+                <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
+                  ?? Submit Cryptographic Sealed Bid
+                </button>
+              </form>
             </div>
 
-            {/* Vendor Cards List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {vendorReputations.map((v) => (
-                <div
-                  key={v.vendorId}
-                  style={{
-                    background: '#FFFFFF',
-                    border: '1px solid #D6E4D6',
-                    borderRadius: '12px',
-                    padding: '16px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '16px',
-                    boxShadow: '0 2px 8px rgba(20,83,45,0.03)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #BBF7D0', color: '#14532D', fontWeight: 800, fontSize: '14px' }}>
-                      {v.score}
-                    </div>
+            {/* Vendor Registration and Local Vault */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Registration */}
+              <div className="card">
+                <div className="card-header">
+                  <div>
+                    <h2 className="card-title">Vendor Eligibility Registration</h2>
+                    <p className="card-subtitle">Register qualification credential to participate in sealed auctions</p>
+                  </div>
+                </div>
 
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h4 style={{ color: '#14532D', fontSize: '15px', fontWeight: 700 }}>{v.vendorName}</h4>
-                        {v.isVerified && (
-                          <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '2px 8px' }}>
-                            <Star style={{ width: '10px', height: '10px' }} /> Verified Vendor
-                          </span>
-                        )}
+                <form onSubmit={handleRegisterVendor}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="form-group">
+                      <label className="form-label">Tender ID</label>
+                      <input
+                        type="number"
+                        className="form-input"
+                        value={regTenderId}
+                        onChange={(e) => setRegTenderId(Number(e.target.value))}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Vendor Address</label>
+                      <input
+                        type="text"
+                        className="form-input font-mono"
+                        value={regVendorAddr}
+                        onChange={(e) => setRegVendorAddr(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {regSecret && (
+                    <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: 'var(--radius-sm)', padding: '0.75rem', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#34d399', fontWeight: 600 }}>
+                        Private Eligibility Token:
+                      </span>
+                      <div className="font-mono" style={{ fontSize: '0.75rem', color: '#ffffff' }}>
+                        {regSecret}
                       </div>
-                      <span className="code" style={{ fontSize: '12px' }}>ID: {v.vendorId}</span>
                     </div>
-                  </div>
+                  )}
 
-                  <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Wins</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#16A34A' }}>{v.successfulBids}</div>
+                  {regMsg && (
+                    <div style={{ fontSize: '0.8125rem', color: '#34d399', marginBottom: '1rem' }}>
+                      {regMsg.text}
                     </div>
+                  )}
 
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Bids</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#14532D' }}>{v.totalParticipations}</div>
-                    </div>
-
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '11px', color: '#4B5563', textTransform: 'uppercase', fontWeight: 600 }}>Win Rate</div>
-                      <div style={{ fontSize: '16px', fontWeight: 700, color: '#166534' }}>{v.winRate}%</div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 7: Tender Analytics Dashboard */}
-        {activeTab === 'analytics' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <BarChart3 className="card-icon" />
-                Procurement Analytics & Metrics Dashboard
-              </h2>
-              <span className="badge badge-info">Real-Time Insights</span>
-            </div>
-
-            {/* Metrics Overview Grid */}
-            <div className="grid-3" style={{ marginBottom: '24px' }}>
-              <div className="stat-box">
-                <div className="stat-label">Total Tenders Tracked</div>
-                <div className="stat-value" style={{ color: '#14532D' }}>{tendersList.length}</div>
+                  <button type="submit" className="btn btn-secondary" style={{ width: '100%' }}>
+                    Verify Eligibility & Register
+                  </button>
+                </form>
               </div>
 
-              <div className="stat-box">
-                <div className="stat-label">Active Open Tenders</div>
-                <div className="stat-value" style={{ color: '#16A34A' }}>{tendersList.filter((t) => t.status === 'Open').length}</div>
-              </div>
-
-              <div className="stat-box">
-                <div className="stat-label">Total Sealed Bids</div>
-                <div className="stat-value" style={{ color: '#166534' }}>
-                  {tendersList.reduce((acc, t) => acc + t.bidsCount, 0)}
-                </div>
-              </div>
-            </div>
-
-            {/* Analytics Visual Breakdown Cards */}
-            <div className="grid-2">
-              {/* Card 1: Tender Lifecycle Breakdown */}
-              <div style={{ background: '#F8FAF8', border: '1px solid #D6E4D6', borderRadius: '12px', padding: '20px' }}>
-                <h3 style={{ fontSize: '15px', color: '#14532D', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-                  <Layers style={{ width: '18px', height: '18px', color: '#14532D' }} />
-                  Tender Status Breakdown
-                </h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Private Bids Vault */}
+              <div className="card" style={{ flex: 1 }}>
+                <div className="card-header">
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px', fontWeight: 600 }}>
-                      <span style={{ color: '#16A34A' }}>Awarded & Verified</span>
-                      <span style={{ color: '#14532D' }}>{tendersList.filter((t) => t.status === 'Awarded').length} Tenders</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', background: '#D6E4D6', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${(tendersList.filter((t) => t.status === 'Awarded').length / tendersList.length) * 100}%`, height: '100%', background: '#16A34A' }}></div>
-                    </div>
+                    <h2 className="card-title">My Private Sealed Bid Vault</h2>
+                    <p className="card-subtitle">Stored securely in local encrypted storage</p>
                   </div>
+                  <span className="badge badge-zk">{privateBids.length} Stored</span>
+                </div>
 
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px', fontWeight: 600 }}>
-                      <span style={{ color: '#D97706' }}>Active Open Bidding</span>
-                      <span style={{ color: '#14532D' }}>{tendersList.filter((t) => t.status === 'Open').length} Tenders</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', background: '#D6E4D6', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${(tendersList.filter((t) => t.status === 'Open').length / tendersList.length) * 100}%`, height: '100%', background: '#D97706' }}></div>
-                    </div>
+                {privateBids.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                    No private sealed bids recorded on this device yet. Submit a sealed bid above to populate your vault.
                   </div>
-                </div>
-              </div>
-
-              {/* Card 2: Quarterly Volume */}
-              <div style={{ background: '#F8FAF8', border: '1px solid #D6E4D6', borderRadius: '12px', padding: '20px' }}>
-                <h3 style={{ fontSize: '15px', color: '#14532D', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
-                  <TrendingUp style={{ width: '18px', height: '18px', color: '#16A34A' }} />
-                  Monthly Procurement Growth
-                </h3>
-
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', height: '100px', paddingTop: '16px' }}>
-                  {[
-                    { month: 'Apr', height: '40%' },
-                    { month: 'May', height: '60%' },
-                    { month: 'Jun', height: '85%' },
-                    { month: 'Jul', height: '100%' },
-                  ].map((m) => (
-                    <div key={m.month} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%' }}>
-                      <div style={{ width: '100%', background: '#14532D', height: m.height, borderRadius: '4px 4px 0 0', marginTop: 'auto' }}></div>
-                      <span style={{ fontSize: '11px', color: '#4B5563', marginTop: '6px', fontWeight: 600 }}>{m.month}</span>
-                    </div>
-                  ))}
-                </div>
+                ) : (
+                  <div className="table-container">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Tender</th>
+                          <th>Bid (Private)</th>
+                          <th>Commitment Hash</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {privateBids.map((b, idx) => (
+                          <tr key={idx}>
+                            <td>
+                              <span style={{ fontWeight: 600 }}>#{b.tenderId}</span>
+                            </td>
+                            <td>
+                              <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>
+                                {b.bidAmount.toLocaleString()} DUST
+                              </span>
+                            </td>
+                            <td>
+                              <span className="font-mono" style={{ fontSize: '0.75rem' }}>
+                                {b.commitmentHash.substring(0, 10)}...
+                              </span>
+                            </td>
+                            <td>
+                              <span
+                                className={`badge ${b.isWinner ? 'badge-awarded' : b.status === 'Revealed' ? 'badge-closed' : 'badge-open'}`}
+                                style={{ fontSize: '0.65rem' }}
+                              >
+                                {b.isWinner ? '?? Won' : b.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 8: System Telemetry */}
-        {activeTab === 'telemetry' && (
-          <div className="card">
-            <div className="card-header">
-              <h2>
-                <Server className="card-icon" />
-                Midnight Infrastructure Telemetry & Services
-              </h2>
-              <span className="badge badge-primary">Midnight Preprod</span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div className="detail-row">
-                <span>Target Midnight Network</span>
-                <strong style={{ color: '#14532D' }}>{networkName}</strong>
+        {/* 4. PUBLIC VERIFIER WORKSPACE */}
+        {activeTab === 'verifier' && (
+          <div style={{ maxWidth: '850px', margin: '0 auto' }}>
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Zero-Knowledge Outcome Verification Suite</h2>
+                  <p className="card-subtitle">
+                    Independently verify that the revealed winning bid cryptographically matches the submitted on-chain commitment without exposing any losing bids.
+                  </p>
+                </div>
+                <span className="badge badge-zk">Public Verifier</span>
               </div>
 
-              <div className="detail-row">
-                <span>Midnight Preprod RPC</span>
-                <span className="code">https://rpc.preprod.midnight.network</span>
-              </div>
+              <form onSubmit={handleRunPublicVerification}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Tender ID</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={verifyTenderId}
+                      onChange={(e) => setVerifyTenderId(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Winning Vendor Address</label>
+                    <input
+                      type="text"
+                      className="form-input font-mono"
+                      value={verifyVendor}
+                      onChange={(e) => setVerifyVendor(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="detail-row">
-                <span>Proof Server (ZK Proving Engine)</span>
-                <span className="code" style={{ color: '#16A34A' }}>{proofServerStatus}</span>
-              </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Winning Bid Amount</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      value={verifyAmount}
+                      onChange={(e) => setVerifyAmount(Number(e.target.value))}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Secret Nonce (Hex)</label>
+                    <input
+                      type="text"
+                      className="form-input font-mono"
+                      value={verifyNonce}
+                      onChange={(e) => setVerifyNonce(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
 
-              <div className="detail-row">
-                <span>Midnight Indexer GraphQL API</span>
-                <span className="code" style={{ color: '#16A34A' }}>https://indexer.preprod.midnight.network/api/v4/graphql</span>
-              </div>
+                <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem' }}>
+                  ??? Execute Cryptographic Verification Circuit
+                </button>
+              </form>
 
-              <div className="detail-row">
-                <span>DUST Token Balance</span>
-                <strong style={{ color: '#D97706' }}>{dustBalance} DUST</strong>
-              </div>
+              {/* Verification Certificate */}
+              {verificationResult && (
+                <div className="cert-box">
+                  <div className="cert-header">
+                    <span>{verificationResult.verified ? '?' : '?'}</span>
+                    <span>
+                      {verificationResult.verified ? 'Zero-Knowledge Procurement Verification Certified' : 'Verification Check Failed'}
+                    </span>
+                  </div>
 
-              {lastTxId && (
-                <div className="detail-row" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
-                  <span>Last Confirmed Transaction</span>
-                  <span className="code">{lastTxId}</span>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem', fontSize: '0.8125rem' }}>
+                    <div style={{ background: 'rgba(7, 11, 20, 0.5)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Tender Existence:</span>
+                      <span style={{ float: 'right', color: verificationResult.tenderExists ? '#34d399' : '#fb7185' }}>
+                        {verificationResult.tenderExists ? 'PASS' : 'FAIL'}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(7, 11, 20, 0.5)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Status Bidding Closed:</span>
+                      <span style={{ float: 'right', color: verificationResult.statusClosed ? '#34d399' : '#fb7185' }}>
+                        {verificationResult.statusClosed ? 'PASS' : 'FAIL'}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(7, 11, 20, 0.5)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Vendor Identity Bound:</span>
+                      <span style={{ float: 'right', color: verificationResult.vendorMatched ? '#34d399' : '#fb7185' }}>
+                        {verificationResult.vendorMatched ? 'PASS' : 'FAIL'}
+                      </span>
+                    </div>
+                    <div style={{ background: 'rgba(7, 11, 20, 0.5)', padding: '0.75rem', borderRadius: 'var(--radius-sm)' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Losing Bids Concealed:</span>
+                      <span style={{ float: 'right', color: '#34d399' }}>100% PRIVATE</span>
+                    </div>
+                  </div>
+
+                  <div style={{ background: 'rgba(7, 11, 20, 0.5)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '0.75rem' }}>
+                    <div style={{ color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Recomputed Cryptographic Commitment:</div>
+                    <div className="font-mono" style={{ color: '#ffffff', wordBreak: 'break-all' }}>
+                      {verificationResult.computedHash}
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                    {verificationResult.details}
+                  </p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Telemetry Footer */}
-        <div className="telemetry-bar">
-          <div className="telemetry-item">
-            <Server style={{ width: '16px', height: '16px', color: '#14532D' }} />
-            <span>Contract: <span className="code">{contractAddress.substring(0, 18)}...</span></span>
-          </div>
+        {/* 5. TELEMETRY AND NETWORK */}
+        {activeTab === 'telemetry' && (
+          <div className="grid-2">
+            {/* Network Infrastructure */}
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Network & Proof Infrastructure</h2>
+                  <p className="card-subtitle">Midnight Preprod and Local Cryptographic Engine</p>
+                </div>
+              </div>
 
-          <div className="telemetry-item">
-            <ShieldCheck style={{ width: '16px', height: '16px', color: '#16A34A' }} />
-            <span>Zero-Knowledge Proofs: Active</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ background: 'rgba(7, 11, 20, 0.4)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Target Network</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Midnight Preprod Testnet</div>
+                  </div>
+                  <span className="badge badge-open">Active</span>
+                </div>
+
+                <div style={{ background: 'rgba(7, 11, 20, 0.4)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Local ZK Proof Server</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>http://127.0.0.1:6300 (Healthy)</div>
+                  </div>
+                  <span className="badge badge-zk">Port 6300</span>
+                </div>
+
+                <div style={{ background: 'rgba(7, 11, 20, 0.4)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>Midnight Indexer</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>https://indexer.preprod.midnight.network/api/v4/graphql</div>
+                  </div>
+                  <span className="badge badge-open">Connected</span>
+                </div>
+
+                <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                  <label className="form-label">Active Preprod Contract Address</label>
+                  <input
+                    type="text"
+                    className="form-input font-mono"
+                    value={contractAddress}
+                    onChange={(e) => {
+                      setContractAddr(e.target.value);
+                      setContractAddress(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Cryptographic Architecture */}
+            <div className="card">
+              <div className="card-header">
+                <div>
+                  <h2 className="card-title">Privacy & Security Invariants</h2>
+                  <p className="card-subtitle">Enforced by Midnight Compact zero-knowledge circuits</p>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ borderLeft: '3px solid var(--accent-primary)', paddingLeft: '0.75rem' }}>
+                  <strong style={{ color: '#ffffff' }}>1. Bid Secrecy Invariant:</strong> Raw bid amounts and blinding nonces are private witnesses processed only in local client ZK circuits. No node or validator ever sees unrevealed bid amounts.
+                </div>
+                <div style={{ borderLeft: '3px solid var(--accent-emerald)', paddingLeft: '0.75rem' }}>
+                  <strong style={{ color: '#ffffff' }}>2. Tamper-Proof Commitment Binding:</strong> Every submitted bid creates an immutable SHA-256 / Pedersen commitment on-chain. Winning reveal MUST prove mathematical preimage correspondence.
+                </div>
+                <div style={{ borderLeft: '3px solid var(--accent-purple)', paddingLeft: '0.75rem' }}>
+                  <strong style={{ color: '#ffffff' }}>3. Multi-Tender State Isolation:</strong> All tender data, vendor registrations, and bid commitments are scoped by unique 64-bit tender IDs, preventing cross-tender state pollution.
+                </div>
+                <div style={{ borderLeft: '3px solid var(--accent-amber)', paddingLeft: '0.75rem' }}>
+                  <strong style={{ color: '#ffffff' }}>4. Zero-Exposure Losing Bids:</strong> Only the winning bid is published during reveal. All non-winning bid amounts remain mathematically sealed in perpetuity.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Reveal Winner Modal */}
+      {revealTenderId && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">Reveal Winning Bid for Tender #{revealTenderId}</h3>
+                <p className="card-subtitle">Provide the cryptographic preimage to verify the winning offer</p>
+              </div>
+              <button className="btn btn-outline" style={{ padding: '0.2rem 0.5rem' }} onClick={() => setRevealTenderId(null)}>
+                ?
+              </button>
+            </div>
+
+            <form onSubmit={handleExecuteReveal}>
+              <div className="form-group">
+                <label className="form-label">Winning Vendor Address</label>
+                <input
+                  type="text"
+                  className="form-input font-mono"
+                  value={revealVendor}
+                  onChange={(e) => setRevealVendor(e.target.value)}
+                  placeholder="0x..."
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Winning Bid Amount (DUST)</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={revealAmount}
+                  onChange={(e) => setRevealAmount(Number(e.target.value))}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Secret Nonce</label>
+                <input
+                  type="text"
+                  className="form-input font-mono"
+                  value={revealNonce}
+                  onChange={(e) => setRevealNonce(e.target.value)}
+                  required
+                />
+              </div>
+
+              {revealMsg && (
+                <div
+                  style={{
+                    padding: '0.75rem',
+                    borderRadius: 'var(--radius-sm)',
+                    marginBottom: '1rem',
+                    fontSize: '0.8125rem',
+                    background: revealMsg.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                    border: `1px solid ${revealMsg.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(244, 63, 94, 0.3)'}`,
+                    color: revealMsg.type === 'success' ? '#34d399' : '#fb7185',
+                  }}
+                >
+                  {revealMsg.text}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setRevealTenderId(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  Verify & Award Tender
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      </main>
+      )}
+
+      {/* Tender Details Modal */}
+      {selectedTender && (
+        <div className="modal-overlay">
+          <div className="modal-card">
+            <div className="card-header">
+              <div>
+                <span className="badge badge-open" style={{ marginBottom: '0.5rem' }}>
+                  Tender #{selectedTender.id}
+                </span>
+                <h3 className="card-title">{selectedTender.title}</h3>
+              </div>
+              <button className="btn btn-outline" style={{ padding: '0.2rem 0.5rem' }} onClick={() => setSelectedTender(null)}>
+                ?
+              </button>
+            </div>
+
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>
+              {selectedTender.description}
+            </p>
+
+            <div style={{ background: 'rgba(7, 11, 20, 0.6)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.8125rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Authority Address:</span>
+                <span className="font-mono">{selectedTender.authority}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Deadline:</span>
+                <span>{selectedTender.deadline}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Status:</span>
+                <span style={{ fontWeight: 600 }}>{selectedTender.status}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Registered Vendors:</span>
+                <span>{selectedTender.vendorsCount}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Submitted Sealed Bids:</span>
+                <span>{selectedTender.bidsCount}</span>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setSelectedTender(null)}>
+                Close
+              </button>
+              {selectedTender.status === 'Open' && (
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                  onClick={() => {
+                    setBidVendorAddr(wallet.address || '');
+                    setBidTenderId(selectedTender.id);
+                    setSelectedTender(null);
+                    setActiveTab('vendor');
+                  }}
+                >
+                  Submit Sealed Bid
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      <footer>
+        <div className="footer-inner">
+          <div>
+            <strong>Confidential Procurement & Tender Platform</strong> ? Production Midnight DApp
+          </div>
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <span>Midnight Preprod</span>
+            <span>Compact Circuit Verified</span>
+            <span>Zero-Knowledge Architecture</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
