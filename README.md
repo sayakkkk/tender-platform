@@ -18,7 +18,7 @@ An enterprise-grade, zero-knowledge decentralized procurement platform engineere
 | :--- | :--- | :--- | :--- |
 | 🌐 **Live Web Application** | [**https://tender-platformm.vercel.app/**](https://tender-platformm.vercel.app/) | Vercel Production | 🟢 **Active & Live** |
 | 📦 **Authoritative Smart Contract** | [`14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f`](https://indexer.preprod.midnight.network) | Midnight Preprod | 🟢 **Deployed (Block 2648857)** |
-| 🎥 **YouTube Video Walkthrough** | [**Official Demonstration Video**](https://youtu.be/frW8-XH0v-U) | YouTube HD Video | 🟢 **Available** |
+| 🎥 **YouTube Video Walkthrough** | [**https://youtu.be/frW8-XH0v-U**](https://youtu.be/frW8-XH0v-U) | YouTube HD Video | 🟢 **Available** |
 | 💻 **GitHub Source Repository** | [**sayakkkk/tender-platform**](https://github.com/sayakkkk/tender-platform) | GitHub (`main` branch) | 🟢 **Public Access** |
 | 📜 **Architecture Specification** | [**PROPOSAL.md**](PROPOSAL.md) | Markdown Document | 🟢 **Level 3 Architecture** |
 | ⚡ **Continuous Integration (CI/CD)** | [**GitHub Actions CI Pipeline**](https://github.com/sayakkkk/tender-platform/actions) | Ubuntu / Node 22.x | 🟢 **All Checks Passing** |
