@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "compact compile contracts/procurement.compact contracts/managed/procurement 2>/dev/null || echo 'Using verified managed contract artifacts.'",
-    "build": "npm run compile && cd ui && npm install && npm run build",
+    "build": "cd ui && npm run build",
     "setup": "npx tsx src/setup.ts",
     "deploy": "npx tsx src/deploy.ts",
     "cli": "npx tsx src/cli.ts",
@@ -19,8 +19,7 @@
     "test": "npx vitest run",
     "test:e2e": "tsx scripts/e2e-check.ts",
     "dev:ui": "cd ui && npm run dev",
-    "build:ui": "cd ui && npm install && npm run build",
-    "postinstall": "cd ui && npm install"
+    "build:ui": "cd ui && npm install && npm run build"
   },
   "dependencies": {
     "@midnight-ntwrk/compact-runtime": "0.16.0",
@@ -52,5 +51,8 @@
     "blockchain",
     "zero-knowledge",
     "privacy"
+  ],
+  "workspaces": [
+    "ui"
   ]
 }
