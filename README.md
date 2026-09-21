@@ -3,7 +3,7 @@
 
 [![Live Web Application](https://img.shields.io/badge/Vercel-Live%20DApp-14532D?style=for-the-badge&logo=vercel)](https://tender-platformm.vercel.app/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/tender-platform)
-[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
+[![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/frW8-XH0v-U)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-14532D?style=for-the-badge&logo=shield)](https://midnight.network)
 [![Compact Compiler](https://img.shields.io/badge/Compact%20DSL-v0.5.1-14532D?style=for-the-badge)](https://midnight.network)
 [![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/tender-platform/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/tender-platform/actions)
@@ -18,7 +18,7 @@ An enterprise-grade, zero-knowledge decentralized procurement platform engineere
 | :--- | :--- | :--- | :--- |
 | 🌐 **Live Web Application** | [**https://tender-platformm.vercel.app/**](https://tender-platformm.vercel.app/) | Vercel Production | 🟢 **Active & Live** |
 | 📦 **Authoritative Smart Contract** | [`14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f`](https://indexer.preprod.midnight.network) | Midnight Preprod | 🟢 **Deployed (Block 2648857)** |
-| 🎥 **YouTube Video Walkthrough** | [**Official Demonstration Video**](https://youtu.be/QRd-vPrFKds) | YouTube HD Video | 🟢 **Available** |
+| 🎥 **YouTube Video Walkthrough** | [**Official Demonstration Video**](https://youtu.be/frW8-XH0v-U) | YouTube HD Video | 🟢 **Available** |
 | 💻 **GitHub Source Repository** | [**sayakkkk/tender-platform**](https://github.com/sayakkkk/tender-platform) | GitHub (`main` branch) | 🟢 **Public Access** |
 | 📜 **Architecture Specification** | [**PROPOSAL.md**](PROPOSAL.md) | Markdown Document | 🟢 **Level 3 Architecture** |
 | ⚡ **Continuous Integration (CI/CD)** | [**GitHub Actions CI Pipeline**](https://github.com/sayakkkk/tender-platform/actions) | Ubuntu / Node 22.x | 🟢 **All Checks Passing** |
