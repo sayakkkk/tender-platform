@@ -2,8 +2,8 @@
 ### Level 3 Sealed-Bid Auction Architecture on Midnight Network
 
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
-[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/procurement-and-tender)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/procurement-and-tender/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/procurement-and-tender/actions)
+[![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/tender-platform)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/tender-platform/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/tender-platform/actions)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-14532D?style=for-the-badge&logo=cardano)](https://midnight.network)
 [![Compact Version](https://img.shields.io/badge/Compact%20DSL-v0.31.1-14532D?style=for-the-badge)](https://midnight.network)
@@ -16,9 +16,9 @@ An enterprise-grade, privacy-preserving decentralized procurement platform engin
 ## Live Demo, Video & Repository
 
 - **Live Web Application**: [https://procurement-and-tender-rust.vercel.app/](https://procurement-and-tender-rust.vercel.app/)
-- **GitHub Repository**: [https://github.com/sayakkkk/procurement-and-tender](https://github.com/sayakkkk/procurement-and-tender)
+- **GitHub Repository**: [https://github.com/sayakkkk/tender-platform](https://github.com/sayakkkk/tender-platform)
 - **Official YouTube Demo Video**: [Watch Demo Video](https://youtu.be/QRd-vPrFKds)
-- **CI/CD Pipeline Status**: [View GitHub Actions Runs](https://github.com/sayakkkk/procurement-and-tender/actions)
+- **CI/CD Pipeline Status**: [View GitHub Actions Runs](https://github.com/sayakkkk/tender-platform/actions)
 
 ---
 
@@ -125,7 +125,7 @@ npm test
 
 ### 1. Installation
 ```bash
-git clone https://github.com/sayakkkk/procurement-and-tender.git
+git clone https://github.com/sayakkkk/tender-platform.git
 cd procurement-and-tender
 npm install
 ```
