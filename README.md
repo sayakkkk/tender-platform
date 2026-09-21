@@ -24,17 +24,13 @@ An enterprise-grade, privacy-preserving decentralized procurement platform engin
 
 ## Screenshots
 
-### 1. Landing Page & Tender Marketplace
-![Landing Page](docs/landing-page.png)
-*The Live Tender Marketplace & Authority Dashboard showing active procurement opportunities, live deadline countdown timers, registered vendor counters, total sealed bid counts, and the interactive 'Bid Now' workflow navigation.*
+### 1. HOME PAGE
+![HOME PAGE](docs/home-page.png)
+*The main portal and tender marketplace overview, featuring live procurement opportunities, telemetry metrics, and seamless integration with Midnight Lace Wallet for authentic preprod DApp authorization.*
 
-### 2. Vendor Sealed-Bid Portal
-![Vendor Dashboard](docs/vendor-dashboard.png)
-*Vendor Portal enabling eligibility verification token creation, client-side SHA-256 bid commitment calculation with secret nonces, and encrypted local bid vault persistence.*
-
-### 3. Public Zero-Knowledge Outcome Verification
-![Public Winner Verification](docs/public-winner-verification.png)
-*Cryptographic proof verification suite allowing public verifiers to validate that the revealed winning bid corresponds to the on-chain commitment without exposing losing bids.*
+### 2. SEALED BID SUBMISSION
+![SEALED BID SUBMISSION](docs/sealed-bid-submission.png)
+*The multi-step zero-knowledge sealed-bid commitment wizard, allowing eligible vendors to specify private commercial proposals and generate cryptographic commitments without exposing bid amounts on-chain.*
 
 ---
 
