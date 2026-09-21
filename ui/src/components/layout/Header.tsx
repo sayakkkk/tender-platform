@@ -62,9 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg tracking-tight text-white">MIDNIGHT</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#00E5FF]/10 text-[#00E5FF] border border-[#00E5FF]/30">
-                  LEVEL 3
-                </span>
+                
               </div>
               <p className="text-xs text-slate-400 font-medium tracking-wide">
                 Confidential Procurement & Sealed-Bid Platform
