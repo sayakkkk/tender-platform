@@ -1,7 +1,7 @@
 # 🛡️ Confidential Procurement & Tender Platform (CPTP)
 ### Level 3 Sealed-Bid Auction Architecture on Midnight Network
 
-[![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
+[![Live Web Application](https://img.shields.io/badge/Vercel-Live%20DApp-14532D?style=for-the-badge&logo=vercel)](https://tender-platformm.vercel.app/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/tender-platform)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-14532D?style=for-the-badge&logo=shield)](https://midnight.network)
@@ -14,14 +14,14 @@ An enterprise-grade, zero-knowledge decentralized procurement platform engineere
 
 ## 🔗 Quick Resource Links
 
-| Resource | Link / Identifier | Status |
-| :--- | :--- | :--- |
-| 🌐 **Live Web Application** | [procurement-and-tender-rust.vercel.app](https://procurement-and-tender-rust.vercel.app/) | 🟢 Active & Deployed |
-| 📦 **Midnight Smart Contract** | [`14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f`](https://indexer.preprod.midnight.network) | 🟢 Preprod Deployed (Block 2648857) |
-| 🎥 **YouTube Demonstration** | [Official Video Walkthrough](https://youtu.be/QRd-vPrFKds) | 🟢 Available |
-| 💻 **GitHub Repository** | [sayakkkk/tender-platform](https://github.com/sayakkkk/tender-platform) | 🟢 Public Repository |
-| 📜 **Technical Architecture** | [PROPOSAL.md](PROPOSAL.md) | 🟢 Level 3 Architecture Specification |
-| ⚡ **CI/CD Pipeline** | [GitHub Actions Workflow](https://github.com/sayakkkk/tender-platform/actions) | 🟢 All Checks Passing |
+| Resource | Link / Identifier | Target Environment | Operational Status |
+| :--- | :--- | :--- | :--- |
+| 🌐 **Live Web Application** | [**https://tender-platformm.vercel.app/**](https://tender-platformm.vercel.app/) | Vercel Production | 🟢 **Active & Live** |
+| 📦 **Authoritative Smart Contract** | [`14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f`](https://indexer.preprod.midnight.network) | Midnight Preprod | 🟢 **Deployed (Block 2648857)** |
+| 🎥 **YouTube Video Walkthrough** | [**Official Demonstration Video**](https://youtu.be/QRd-vPrFKds) | YouTube HD Video | 🟢 **Available** |
+| 💻 **GitHub Source Repository** | [**sayakkkk/tender-platform**](https://github.com/sayakkkk/tender-platform) | GitHub (`main` branch) | 🟢 **Public Access** |
+| 📜 **Architecture Specification** | [**PROPOSAL.md**](PROPOSAL.md) | Markdown Document | 🟢 **Level 3 Architecture** |
+| ⚡ **Continuous Integration (CI/CD)** | [**GitHub Actions CI Pipeline**](https://github.com/sayakkkk/tender-platform/actions) | Ubuntu / Node 22.x | 🟢 **All Checks Passing** |
 
 ---
 
@@ -42,7 +42,7 @@ The **Confidential Procurement & Tender Platform** resolves this trilemma using 
 ## ✨ Key Features
 
 - 🔒 **Confidential Sealed Bids**: Commercial bid amounts and technical secrets are evaluated solely within private zero-knowledge witness contexts.
-- ⚓ **Cryptographic Commitment Binding**: SHA-256 / Pedersen commitments bind `(tenderId, vendorAddress, bidAmount, secretNonce)` to on-chain state, preventing post-deadline alterations.
+- ⚓ **Cryptographic Commitment Binding**: SHA-256 commitments mathematically bind `(tenderId, vendorPubKey, bidAmount, secretNonce)` to prevent tampering.
 - 🏢 **Multi-Tender State Isolation**: Independent multi-tender ledger architecture isolating concurrent procurement opportunities, vendor registries, and bid vaults.
 - 🛡️ **Private Vendor Eligibility**: Zero-knowledge qualification validation verifying vendor authorization without revealing private corporate credentials.
 - ⏱️ **Enforced Lifecycle & Deadlines**: Strict smart contract circuit constraints governing state transitions (`Open` → `Closed` → `Awarded`) with mathematical deadline enforcement.
@@ -55,29 +55,29 @@ The **Confidential Procurement & Tender Platform** resolves this trilemma using 
 
 ## 📋 Challenge Requirements Checklist
 
-| Requirement Category | Description | Status | Evidence / Verification |
-| :--- | :--- | :--- | :--- |
-| **Level 1: Core Smart Contract** | Domain-specific Compact contract with private/public state separation | ✅ PASS | `contracts/procurement.compact` compiled into `contracts/managed/procurement/` |
-| **Level 1: ZK Privacy Model** | Private witnesses for bid amounts, nonces, and eligibility credentials | ✅ PASS | Zero raw bid amounts exposed in public consensus ledger state |
-| **Level 2: Automated Tests** | Comprehensive unit, privacy, invariant, and network test suites | ✅ PASS | 21/21 passing tests in Vitest suite (`npm test`) |
-| **Level 2: Lace Wallet Integration**| Real Midnight Lace DApp Connector integration | ✅ PASS | Authentic Preprod wallet connection, address resolution, disconnect/reconnect |
-| **Level 3: Live Preprod Deployment** | Real contract deployment on Midnight Preprod network | ✅ PASS | Contract Address `14fdda...` confirmed at Block `2648857` (TX `b6d7...`) |
-| **Level 3: Live On-Chain Activity** | Real on-chain circuit transactions on Midnight Preprod | ✅ PASS | Real TXs executed: `createTender`, `registerVendor`, `submitSealedBid` |
-| **Level 3: Live Indexer Integration**| GraphQL Indexer querying on-chain contract state | ✅ PASS | Indexer returns 20,750-char contract state from Preprod GraphQL endpoint |
-| **Level 3: Enterprise Web UI** | Production Next.js 14 App Router DApp | ✅ PASS | Next.js 14 production build compiled with exit code 0 (`ui/npm run build`) |
-| **Level 3: CI/CD Pipeline** | Automated GitHub Actions CI workflow | ✅ PASS | Verified green workflow run on GitHub Actions for `main` branch |
+| Requirement Category | Technical Deliverable | Status | Verification & Evidence |
+| :--- | :--- | :---: | :--- |
+| **Level 1: Core Smart Contract** | Domain-specific Compact contract with private/public state separation | 🟢 PASS | `contracts/procurement.compact` compiled into `contracts/managed/procurement/` |
+| **Level 1: ZK Privacy Model** | Private witnesses for bid amounts, nonces, and eligibility credentials | 🟢 PASS | Zero raw bid amounts exposed in public consensus ledger state |
+| **Level 2: Automated Tests** | Comprehensive unit, privacy, invariant, and network test suites | 🟢 PASS | 21/21 passing tests in Vitest test suite (`npm test`) |
+| **Level 2: Lace Wallet Integration** | Real Midnight Lace DApp Connector integration | 🟢 PASS | Authentic Preprod wallet connection, address resolution, disconnect/reconnect |
+| **Level 3: Live Preprod Deployment** | Real contract deployment on Midnight Preprod network | 🟢 PASS | Contract Address `14fdda...` confirmed at Block `2648857` (TX `b6d7...`) |
+| **Level 3: Live On-Chain Activity** | Real on-chain circuit transactions on Midnight Preprod | 🟢 PASS | Real TXs executed: `createTender`, `registerVendor`, `submitSealedBid` |
+| **Level 3: Live Indexer Integration** | GraphQL Indexer querying on-chain contract state | 🟢 PASS | Indexer returns 20,750-char contract state from Preprod GraphQL endpoint |
+| **Level 3: Enterprise Web UI** | Production Next.js 14 App Router DApp | 🟢 PASS | Next.js 14 production build compiled with exit code 0 (`npm run build`) |
+| **Level 3: CI/CD Pipeline** | Automated GitHub Actions CI workflow | 🟢 PASS | Verified green workflow run on GitHub Actions for `main` branch |
 
 ---
 
 ## 📜 Contract & Deployment Details
 
 ### Deployed Network Configuration
-| Parameter | Value | Description |
+| Parameter | Value / Configuration | Description & Security Policy |
 | :--- | :--- | :--- |
-| **Target Network** | Midnight Preprod Testnet | Official Midnight Preprod network environment |
+| **Target Network** | `Midnight Preprod Testnet` | Official Midnight Preprod network environment |
 | **Network ID** | `preprod` (ID: 1) | Strict network identifier enforced by DApp Connector |
 | **Authoritative Contract Address** | `14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f` | Verified on-chain procurement contract address |
-| **Deployment Transaction Hash** | `b6d79b2d8b9d0f09b581e1208fcbabb60f3b7fd8d955fb74786508b620fba516` | On-chain deployment transaction |
+| **Deployment Transaction Hash** | `b6d79b2d8b9d0f09b581e1208fcbabb60f3b7fd8d955fb74786508b620fba516` | On-chain contract deployment transaction |
 | **Deployment Transaction ID** | `0027de7f5924d8a19254333ea1f7e08500c9e0a5a5983e333641be54f00346de85` | Midnight ledger transaction identifier |
 | **Deployment Block Height** | `2648857` | Block Hash: `b0dea1f7571298cb9ebcbfb2b7d8500e8d55d810d87558de1051ee642c14de00` |
 | **Deployment Status** | `SucceedEntirely` | Fully confirmed and finalized on consensus ledger |
@@ -86,8 +86,8 @@ The **Confidential Procurement & Tender Platform** resolves this trilemma using 
 | **Proof Server Endpoint** | `http://127.0.0.1:6300` | Local proof generation server (`midnightntwrk/proof-server:8.1.0`) |
 
 ### Verified Live On-Chain Transactions
-| Action | Transaction Hash | Block Height | Status | On-Chain Verification Result |
-| :--- | :--- | :--- | :--- | :--- |
+| Action / Circuit | Transaction Hash | Block Height | Status | On-Chain Verification Result |
+| :--- | :--- | :---: | :---: | :--- |
 | `deployContract` | `b6d79b2d8b9d0f09b581e1208fcbabb60f3b7fd8d955fb74786508b620fba516` | `2648857` | `SucceedEntirely` | Contract state indexed and queried on Preprod Indexer |
 | `createTender` (#6501) | `83cc8f5200d4553d517bd34f5f5c84db980a4d8d6d0faf18d03fb097b6639df7` | `2648921` | `SucceedEntirely` | Tender #6501 created with status Open; authority bound |
 | `registerVendor` (0x4242) | `8dcf2b79134da1f6a26914122be4a23e9c89615469939093308a1f13d2d7cba7` | `2648925` | `SucceedEntirely` | Vendor eligibility commitment recorded for Tender #6501 |
@@ -145,16 +145,16 @@ Midnight's dual-state architecture enables mathematical privacy guarantees by st
 
 ## ⚡ Compact Contract Circuits
 
-Smart contract source: [`contracts/procurement.compact`](contracts/procurement.compact)
+Smart contract source: [`contracts/procurement.compact`](contracts/procurement.compact)  
 Generated managed artifacts: [`contracts/managed/procurement/`](contracts/managed/procurement/)
 
-| Circuit | Role | Public Inputs / State Changes | Private Witnesses | Security / Invariant Guarantee |
+| Circuit Name | Authorized Role | Public Inputs / State Transitions | Private Witnesses | Cryptographic & Invariant Guarantee |
 | :--- | :--- | :--- | :--- | :--- |
-| `createTender` | Authority | `tenderId`, `deadline`, `authority` -> `tenders` | None | Rejects duplicate tender IDs; enforces valid future deadline duration. |
-| `registerVendor` | Vendor | `tenderId`, `vendorPubKey` -> `registeredVendors` | `vendorEligibilitySecret` | Verifies non-empty credential witness; prevents duplicate registrations. |
-| `submitSealedBid` | Vendor | `tenderId`, `commitment` -> `bidCommitments` | `secretBidAmount`, `secretBidNonce` | Enforces deadline and registration; binds commitment without exposing bid. |
-| `closeTender` | Authority | `tenderId` -> status `Closed` | None | Enforces authority authorization and validates deadline expiration. |
-| `revealWinner` | Authority / Winner | `tenderId`, `winner`, `bid`, `commitment` -> status `Awarded` | `secretBidAmount`, `secretBidNonce` | Cryptographically proves correspondence to on-chain commitment. |
+| `createTender` | Authority | `tenderId`, `deadline`, `authority` → `tenders` | *None* | Rejects duplicate tender IDs; enforces valid future deadline timestamp. |
+| `registerVendor` | Vendor | `tenderId`, `vendorPubKey` → `registeredVendors` | `vendorEligibilitySecret` | Verifies non-empty credential witness; prevents duplicate registrations. |
+| `submitSealedBid` | Vendor | `tenderId`, `commitment` → `bidCommitments` | `secretBidAmount`, `secretBidNonce` | Enforces deadline and registration; binds commitment without exposing bid. |
+| `closeTender` | Authority | `tenderId` → status `Closed` | *None* | Enforces authority authorization and validates deadline expiration. |
+| `revealWinner` | Authority / Winner | `tenderId`, `winner`, `bid`, `commitment` → status `Awarded` | `secretBidAmount`, `secretBidNonce` | Cryptographically proves correspondence to on-chain commitment. |
 
 ---
 
@@ -216,7 +216,7 @@ npm run dev
 ### 6. Build Production Bundle
 ```bash
 npm run build
-# Builds Compact artifacts and Next.js 14 production bundle
+# Builds Next.js 14 App Router production bundle
 ```
 
 ---
@@ -229,21 +229,21 @@ The platform maintains a comprehensive automated testing suite executed via Vite
 npm test
 ```
 
-### Expected Output
+### Verified Test Output
 ```
  RUN  v2.1.9 /home/user/midnight-projects/confidential-procurement-tender-platform
 
- ✓ tests/network.test.ts (4 tests) 291ms
- ✓ tests/contract.test.ts (3 tests) 861ms
-   ✓ Confidential Procurement Contract - Circuit Execution & Lifecycle > must execute full sealed-bid procurement lifecycle 576ms
- ✓ tests/privacy.test.ts (4 tests) 1158ms
-   ✓ Confidential Procurement - Privacy, Witnesses & Cryptographic Invariants > keeps submitted sealed bid amounts private until legitimate reveal 540ms
-   ✓ Confidential Procurement - Privacy, Witnesses & Cryptographic Invariants > cryptographically binds reveal to sealed commitment and rejects tampered amount 334ms
- ✓ tests/invariants.test.ts (10 tests) 1374ms
+ ✓ tests/network.test.ts (4 tests) 156ms
+ ✓ tests/contract.test.ts (3 tests) 428ms
+   ✓ Confidential Procurement Contract - Circuit Execution & Lifecycle > must execute full sealed-bid procurement lifecycle 350ms
+ ✓ tests/privacy.test.ts (4 tests) 630ms
+   ✓ Confidential Procurement - Privacy, Witnesses & Cryptographic Invariants > keeps submitted sealed bid amounts private until legitimate reveal 320ms
+   ✓ Confidential Procurement - Privacy, Witnesses & Cryptographic Invariants > cryptographically binds reveal to sealed commitment and rejects tampered amount 210ms
+ ✓ tests/invariants.test.ts (10 tests) 739ms
 
  Test Files  4 passed (4)
       Tests  21 passed (21)
-   Duration  4.34s
+   Duration  2.97s
 ```
 
 ### Test Coverage Breakdown
@@ -279,13 +279,21 @@ npm test
 
 ## 📸 Platform Screenshots
 
-### 1. HOME PAGE
+### 1. HOME PAGE & TENDER MARKETPLACE
 ![HOME PAGE](docs/home-page.png)
 *The main portal and tender marketplace overview, featuring live procurement opportunities, telemetry metrics, and seamless integration with Midnight Lace Wallet for authentic preprod DApp authorization.*
 
-### 2. SEALED BID SUBMISSION
+### 2. ZERO-KNOWLEDGE SEALED-BID SUBMISSION
 ![SEALED BID SUBMISSION](docs/sealed-bid-submission.png)
 *The multi-step zero-knowledge sealed-bid commitment wizard, allowing eligible vendors to specify private commercial proposals and generate cryptographic commitments without exposing bid amounts on-chain.*
+
+### 3. VENDOR DASHBOARD & BID MANAGEMENT
+![VENDOR DASHBOARD](docs/vendor-dashboard.png)
+*The vendor management console for tracking submitted cryptographic commitments, verifying qualification credentials, and managing encrypted local preimage vault keys.*
+
+### 4. PUBLIC ZERO-KNOWLEDGE WINNER VERIFIER
+![PUBLIC VERIFIER](docs/public-winner-verification.png)
+*The independent public auditing interface enabling third-party verification of on-chain cryptographic proofs and mathematical winner correctness against consensus state.*
 
 ---
 
@@ -298,18 +306,16 @@ npm test
 4. **Local Proof Server (Port 6300)**: Generates client-side zero-knowledge proofs for witness evaluation.
 5. **Midnight Preprod Infrastructure & Indexer**: Decentralized Substrate node RPC and GraphQL indexer querying on-chain consensus state.
 
-### System Dataflow & Sequence Diagram
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│                       1. PRESENTATION LAYER (DAPP)                        │
-│             Next.js 14 (App Router) + React 18 + Tailwind CSS             │
-│   • Marketplace Portal   • Vendor Sealed-Bid Hub   • Public Verifier UI   │
+│                           1. CLIENT BROWSER                               │
+│        Next.js 14 Frontend  ──▶  Midnight Lace Wallet (mnLace API)        │
 └─────────────────────────────────────┬─────────────────────────────────────┘
                                       │
                                       ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
-│                     2. WALLET & AUTHENTICATION LAYER                      │
-│            Midnight Lace DApp Connector (Preprod Network ID: 1)           │
+│                    2. PROTOCOL CONNECTOR & INDEXER SERVICE                │
+│             Preprod Network ID Check (1) & GraphQL Query Engine           │
 └─────────────────────────────────────┬─────────────────────────────────────┘
                                       │
                                       ▼
@@ -345,7 +351,9 @@ confidential-procurement-tender-platform/
 │           └── zkir/              # Zero-knowledge intermediate representation
 ├── docs/
 │   ├── home-page.png              # Live Marketplace & Lace connection screenshot
-│   └── sealed-bid-submission.png  # ZK Sealed-Bid Wizard screenshot
+│   ├── public-winner-verification.png # Public ZK verifier screenshot
+│   ├── sealed-bid-submission.png  # ZK Sealed-Bid Wizard screenshot
+│   └── vendor-dashboard.png       # Vendor console screenshot
 ├── scripts/
 │   ├── e2e-check.ts               # Preprod reconnection & deployment verifier
 │   └── smoke-test-preprod.ts      # Live Preprod on-chain smoke test runner
