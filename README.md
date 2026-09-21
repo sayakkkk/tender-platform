@@ -3,11 +3,10 @@
 
 [![Live Demo](https://img.shields.io/badge/Vercel-Live%20Demo-14532D?style=for-the-badge&logo=vercel)](https://procurement-and-tender-rust.vercel.app/)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-Repository-14532D?style=for-the-badge&logo=github)](https://github.com/sayakkkk/tender-platform)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/tender-platform/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/tender-platform/actions)
 [![YouTube Demo](https://img.shields.io/badge/YouTube-Demo%20Video-14532D?style=for-the-badge&logo=youtube)](https://youtu.be/QRd-vPrFKds)
 [![Midnight Network](https://img.shields.io/badge/Midnight-Preprod-14532D?style=for-the-badge&logo=shield)](https://midnight.network)
 [![Compact Compiler](https://img.shields.io/badge/Compact%20DSL-v0.5.1-14532D?style=for-the-badge)](https://midnight.network)
-[![Node Version](https://img.shields.io/badge/Node.js-v22.23.1-14532D?style=for-the-badge&logo=node.js)](https://nodejs.org)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/sayakkkk/tender-platform/ci.yml?branch=main&style=for-the-badge&label=CI%2FCD)](https://github.com/sayakkkk/tender-platform/actions)
 
 An enterprise-grade, zero-knowledge decentralized procurement platform engineered on **Midnight Network** for official **Level 3 Sealed-Bid Auctions**. Procurement authorities publish public tender specifications while authorized vendors submit zero-knowledge confidential sealed bids. Commercial proposal pricing and proprietary vendor credentials remain strictly private throughout the bidding window via local client-side witness execution, while immutable cryptographic commitments are verified on-chain.
 
