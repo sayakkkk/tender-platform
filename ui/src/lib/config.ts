@@ -1,11 +1,11 @@
 export const APP_CONFIG = {
   APP_NAME: "Confidential Procurement & Tender Platform",
-  CATEGORY: "Level 3 — Sealed-Bid Auction Protocol",
+  CATEGORY: "Level 3 - Sealed-Bid Auction Protocol",
   NETWORK_NAME: "Midnight Preprod",
   NETWORK_ID: "preprod",
   INDEXER_URL: "https://indexer.preprod.midnight.network/api/v4/graphql",
   PROOF_SERVER_URL: "http://127.0.0.1:6300",
-  DEFAULT_CONTRACT_ADDRESS: "02005a3b2b8c9d1f0e4a7c8b9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e",
+  DEFAULT_CONTRACT_ADDRESS: "14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f",
   EXPLORER_URL: "https://preprod.midnight.network/explorer",
   CIRCUITS: {
     CREATE_TENDER: "createTender",

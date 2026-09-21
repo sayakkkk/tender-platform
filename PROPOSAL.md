@@ -149,7 +149,7 @@ The platform is structured into five modular, decoupled operational layers:
 ### Technology Stack Specifications
 
 - **Smart Contract Language**: Midnight Compact DSL (`v0.31.1` compiler / `v0.5.1` CLI)
-- **Frontend Framework**: React 18, TypeScript 5, Vite 5, Lucide Icons
+- **Frontend Framework**: Next.js 14, React 18, TypeScript 5, Lucide Icons
 - **ZK Proving Engine**: Midnight Proof Server (Port `6300`)
 - **Blockchain Infrastructure**: Midnight Preprod Testnet Node RPC & Indexer GraphQL API
 - **Testing & Quality Assurance**: Vitest (`v2.1`), Automated CI/CD GitHub Actions

@@ -1,41 +1,29 @@
-/**
- * End-to-end smoke check for confidential-procurement-tender-platform.
- * Reconnects to the deployed contract, reads multi-tender state, and checks contract integrity.
- */
-import * as fs from 'node:fs';
-import * as path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-import { WebSocket } from 'ws';
-
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { CompiledContract } from '@midnight-ntwrk/compact-runtime';
 import { findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
-import { httpClientProofProvider } from '@midnight-ntwrk/midnight-js-http-client-proof-provider';
-import { indexerPublicDataProvider } from '@midnight-ntwrk/midnight-js-indexer-public-data-provider';
-import { levelPrivateStateProvider } from '@midnight-ntwrk/midnight-js-level-private-state-provider';
-import { NodeZkConfigProvider } from '@midnight-ntwrk/midnight-js-node-zk-config-provider';
-import { resolveNetwork, getOrCreateSeed, getDeployment } from '../src/network.js';
-import { createWallet, persistWalletState } from '../src/wallet.js';
-import { CompiledContract } from '@midnight-ntwrk/midnight-js-protocol/compact-js';
+import { createWalletAndMidnightProvider } from '../src/wallet-utils.js';
+import { resolveNetwork } from '../src/network-resolver.js';
+import { getDeployment } from '../src/deployment-store.js';
+import { getOrCreateSeed } from '../src/seed-store.js';
 
-// @ts-expect-error wallet sync requires WebSocket
-globalThis.WebSocket = WebSocket;
-
-const PRIVATE_STATE_ID = 'procurementPrivateState';
 const { network, config: networkConfig } = resolveNetwork();
 const SEED = getOrCreateSeed(network);
 
 function fail(msg: string): never {
-  console.error(❌ e2e-check failed: );
+  console.error([FAIL] e2e-check failed: );
   process.exit(1);
 }
 
 function isHexAddress(s: unknown): s is string {
-  return typeof s === 'string' && /^[0-9a-fA-F]+$/.test(s) && s.length >= 32;
+  return typeof s === 'string' && /^[0-9a-fA-F]{64}$/.test(s);
 }
 
 async function main() {
   const deployment = getDeployment(network);
   if (!deployment) {
-    console.log(No deployment on file for network  — skipping live reconnection check.);
+    console.log(No deployment on file for network  - skipping live reconnection check.);
     process.exit(0);
   }
   if (!isHexAddress(deployment.address)) {
@@ -45,48 +33,45 @@ async function main() {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const zkConfigPath = path.resolve(__dirname, '..', 'contracts', 'managed', 'procurement');
   const contractPath = path.join(zkConfigPath, 'contract', 'index.js');
-  if (!fs.existsSync(contractPath)) fail('Compiled contract missing — run 
-pm run compile.');
+  if (!fs.existsSync(contractPath)) fail('Compiled contract missing - run npm run compile.');
   const ProcurementModule = await import(pathToFileURL(contractPath).href);
-  const compiledContract = CompiledContract.make('procurement', ProcurementModule.Contract).pipe(
+
+  const defaultWitnesses = {
+    secretBidAmount: (ctx: any) => [ctx.privateState, 0n],
+    secretBidNonce: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+    vendorEligibilitySecret: (ctx: any) => [ctx.privateState, new Uint8Array(32)],
+  };
+  class ProcurementContract extends ProcurementModule.Contract {
+    constructor(witnesses = defaultWitnesses) {
+      super(witnesses ?? defaultWitnesses);
+    }
+  }
+
+  const compiledContract = CompiledContract.make('procurement', ProcurementContract).pipe(
     CompiledContract.withCompiledFileAssets(zkConfigPath),
   );
 
-  const walletCtx = await createWallet({ network, networkConfig, seed: SEED });
-  await walletCtx.wallet.waitForSyncedState();
-  await persistWalletState(network, walletCtx);
-
-  const zkConfigProvider = new NodeZkConfigProvider(zkConfigPath);
-  const walletProvider = {
-    getCoinPublicKey: () => walletCtx.shieldedSecretKeys.coinPublicKey,
-    getEncryptionPublicKey: () => walletCtx.shieldedSecretKeys.encryptionPublicKey,
-    async balanceTx() {
-      throw new Error('e2e-check is read-only');
-    },
-    submitTx() {
-      throw new Error('e2e-check is read-only');
-    },
-  } as any;
+  console.log(Connecting wallet for network ...);
+  const walletCtx = await createWalletAndMidnightProvider(networkConfig, SEED);
 
   const providers = {
-    privateStateProvider: levelPrivateStateProvider({
-      privateStateStoreName: 'procurement-state',
-      accountId: walletCtx.unshieldedKeystore.getBech32Address().toString(),
-      privateStoragePasswordProvider: () => 'Procurement-Platform-Secure-Key-1',
-    }),
-    publicDataProvider: indexerPublicDataProvider(networkConfig.indexer, networkConfig.indexerWS),
-    zkConfigProvider,
-    proofProvider: httpClientProofProvider(networkConfig.proofServer, zkConfigProvider),
-    walletProvider,
-    midnightProvider: walletProvider,
+    privateStateProvider: walletCtx.providers.privateStateProvider,
+    publicDataProvider: walletCtx.providers.publicDataProvider,
+    zkConfigProvider: walletCtx.providers.zkConfigProvider,
+    proofProvider: walletCtx.providers.proofProvider,
+    walletProvider: walletCtx.providers.walletProvider,
+    midnightProvider: walletCtx.providers.midnightProvider,
   };
 
   try {
     await findDeployedContract(providers, {
       contractAddress: deployment.address,
-      compiledContract: compiledContract as any,
-      privateStateId: PRIVATE_STATE_ID,
-      initialPrivateState: {},
+      compiledContract,
+      privateStateKey: 'procurementPrivateState',
+      initialPrivateState: {
+        privateBids: new Map(),
+        vendorSecrets: new Map(),
+      },
     });
   } catch (err: any) {
     await walletCtx.wallet.stop();
@@ -99,7 +84,7 @@ pm run compile.');
     fail(queryContractState returned null for );
   }
 
-  console.log(✅ e2e-check passed);
+  console.log([PASS] e2e-check passed);
   console.log(   contractAddress: );
   console.log(   network:         );
 

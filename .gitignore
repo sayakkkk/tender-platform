@@ -64,3 +64,4 @@ out/
 ui/out/
 next-env.d.ts
 ui/next-env.d.ts
+*.tsbuildinfo

@@ -14,7 +14,7 @@ const INITIAL_TENDERS: Tender[] = [
     status: "OPEN",
     eligibilityScoreReq: 3,
     bidCommitmentsCount: 3,
-    provenance: "BLOCKCHAIN"
+    provenance: "EXAMPLE"
   },
   {
     id: 102,
@@ -27,7 +27,7 @@ const INITIAL_TENDERS: Tender[] = [
     status: "OPEN",
     eligibilityScoreReq: 4,
     bidCommitmentsCount: 2,
-    provenance: "BLOCKCHAIN"
+    provenance: "EXAMPLE"
   },
   {
     id: 103,
@@ -44,7 +44,7 @@ const INITIAL_TENDERS: Tender[] = [
     winningBidAmount: 485000,
     winnerCommitment: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     revealTimestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
-    provenance: "BLOCKCHAIN"
+    provenance: "EXAMPLE"
   }
 ];
 

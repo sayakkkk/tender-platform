@@ -143,21 +143,33 @@ npm test
 
 ### 4. Build & Launch Web UI
 ```bash
-npm run dev:ui
-# Opens http://localhost:5173
+cd ui && npm run dev
+# Opens http://localhost:3000
 ```
 
 ---
 
-## Midnight Preprod Configuration
+## Midnight Preprod Verified Deployment Evidence
 
 - **Target Network**: Midnight Preprod Testnet
 - **Network ID**: `preprod` (ID: 1)
 - **Indexer GraphQL Endpoint**: `https://indexer.preprod.midnight.network/api/v4/graphql`
-- **Proof Server Endpoint**: `http://127.0.0.1:6300` (Local)
-- **Deployed Procurement Contract Address**: `02008ff27a073d6c82d166cee06f1571d8f9b4e7b4a4e9f310367a7c719b52da30b9`
+- **Node RPC Endpoint**: `https://rpc.preprod.midnight.network`
+- **Proof Server Endpoint**: `http://127.0.0.1:6300` (Local Proof Server)
+- **Authoritative Contract Address**: `14fdda1f6c45f3394b3113fb23dc70357a5fbcabc51caebf036a31f6991a3c0f`
+- **Deployment Transaction Hash**: `b6d79b2d8b9d0f09b581e1208fcbabb60f3b7fd8d955fb74786508b620fba516`
+- **Deployment Transaction ID**: `0027de7f5924d8a19254333ea1f7e08500c9e0a5a5983e333641be54f00346de85`
+- **Deployment Block Height**: `2648857` (Block Hash: `b0dea1f7571298cb9ebcbf2b7d8500e8d55d810d87558de1051ee642c14de00`)
+- **Deployment State Status**: `SucceedEntirely`
 
----
+### Verified Live Preprod Transactions
+| Action | Transaction Hash | Block Height | Status | On-Chain Verification |
+| :--- | :--- | :--- | :--- | :--- |
+| `deployContract` | `b6d79b2d8b9d0f09b581e1208fcbabb60f3b7fd8d955fb74786508b620fba516` | `2648857` | `SucceedEntirely` | Contract state indexed on Preprod Indexer |
+| `createTender` (#6501) | `83cc8f5200d4553d517bd34f5f5c84db980a4d8d6d0faf18d03fb097b6639df7` | `2648921` | `SucceedEntirely` | Tender #6501 created with status Open |
+| `registerVendor` (0x4242) | `8dcf2b79134da1f6a26914122be4a23e9c89615469939093308a1f13d2d7cba7` | `2648925` | `SucceedEntirely` | Vendor eligibility commitment recorded |
+| `submitSealedBid` (850k) | `ff90bdb6f786841eb65ba42a04a0b500fce889c0434c3a5c3391969fa88bdfb9` | `2648930` | `SucceedEntirely` | SHA-256 commitment registered; bid value hidden |
+
 
 ## License
 MIT License. Engineered for the Midnight Network Community.

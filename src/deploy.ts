@@ -110,7 +110,17 @@ export async function deploy(): Promise<DeployResult> {
   }
 
   const ProcurementModule = await import(pathToFileURL(contractPath).href);
-  const compiledContract = CompiledContract.make('procurement', ProcurementModule.Contract).pipe(
+  const defaultWitnesses = {
+    secretBidAmount: (ctx) => [ctx.privateState, 0n],
+    secretBidNonce: (ctx) => [ctx.privateState, new Uint8Array(32)],
+    vendorEligibilitySecret: (ctx) => [ctx.privateState, new Uint8Array(32)],
+  };
+  class ProcurementContract extends ProcurementModule.Contract {
+    constructor(witnesses = defaultWitnesses) {
+      super(witnesses ?? defaultWitnesses);
+    }
+  }
+  const compiledContract = CompiledContract.make('procurement', ProcurementContract).pipe(
     CompiledContract.withCompiledFileAssets(zkConfigPath),
   );
 
