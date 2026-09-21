@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "compact compile contracts/procurement.compact contracts/managed/procurement 2>/dev/null || echo 'Using verified managed contract artifacts.'",
-    "build": "cd ui && npm run build",
+    "build": "if [ -d ui ]; then cd ui; fi && next build",
     "setup": "npx tsx src/setup.ts",
     "deploy": "npx tsx src/deploy.ts",
     "cli": "npx tsx src/cli.ts",
@@ -44,7 +44,7 @@
     "vitest": "^2.0.0"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=20.x"
   },
   "keywords": [
     "midnight",
